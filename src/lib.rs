@@ -18,14 +18,14 @@ use syn::Ident;
 
 pub struct Spirv {
     pub name: Ident,
-    pub specialization_constants: SpecializationConstants,
+    pub specialization_constants: Option<SpecializationConstants>,
 }
 
 impl Spirv {
     pub fn try_from_bytes<S: Into<String>>(name: S, bytes: &[u8]) -> Self {
         let spirv = Reflection::new_from_spirv(bytes).unwrap();
 
-        let specialization_constants = SpecializationConstants::from(&spirv);
+        let specialization_constants = SpecializationConstants::new(&spirv);
 
         Self {
             name: format_ident!("{}", name.into()),

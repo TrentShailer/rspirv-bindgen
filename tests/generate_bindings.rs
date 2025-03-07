@@ -20,3 +20,12 @@ fn generate_bindings_render_capture() {
     );
     println!("{}", spirv.pretty_string());
 }
+
+#[test]
+fn generate_bindings_render_line() {
+    let spirv = Spirv::try_from_bytes(
+        "render_line",
+        include_bytes!("./data/spv/render_line.spv").as_slice(),
+    );
+    println!("{}", spirv.pretty_string());
+}

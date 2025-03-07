@@ -20,8 +20,8 @@ pub struct SpecializationConstants {
     pub constants: Vec<SpecializationConstant>,
 }
 
-impl From<&Reflection> for SpecializationConstants {
-    fn from(spirv: &Reflection) -> Self {
+impl SpecializationConstants {
+    pub fn new(spirv: &Reflection) -> Option<Self> {
         let mut constants: Vec<_> = spirv
             .0
             .types_global_values
@@ -29,9 +29,13 @@ impl From<&Reflection> for SpecializationConstants {
             .filter_map(|instruction| SpecializationConstant::maybe_from(instruction, spirv))
             .collect();
 
+        if constants.is_empty() {
+            return None;
+        }
+
         constants.sort_by_key(|v| v.constant_id);
 
-        Self { constants }
+        Some(Self { constants })
     }
 }
 
