@@ -59,19 +59,4 @@ impl Primitive {
             Self::F64 => syn::parse_quote! {f64},
         }
     }
-
-    pub fn type_string(&self) -> &'static str {
-        match self {
-            Self::U8 => "u8",
-            Self::U16 => "u16",
-            Self::U32 => "u32",
-            Self::U64 => "u64",
-            Self::I8 => "i8",
-            Self::I16 => "i16",
-            Self::I32 => "i32",
-            Self::I64 => "i64",
-            Self::F32 => "f32",
-            Self::F64 => "f64",
-        }
-    }
 }
