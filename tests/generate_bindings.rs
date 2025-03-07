@@ -29,3 +29,12 @@ fn generate_bindings_render_line() {
     );
     println!("{}", spirv.pretty_string());
 }
+
+#[test]
+fn generate_bindings_maximum_reduction() {
+    let spirv = Spirv::try_from_bytes(
+        "maximum_reduction",
+        include_bytes!("./data/spv/maximum_reduction.spv").as_slice(),
+    );
+    println!("{}", spirv.pretty_string());
+}
