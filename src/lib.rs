@@ -8,30 +8,45 @@ mod specialization_constant;
 
 use prettyplease::unparse;
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{ToTokens, format_ident, quote};
 use rspirv_reflect::Reflection;
 use specialization_constant::SpecializationConstants;
+use syn::Ident;
 
-pub fn generate_bindings(spirv: &[u8]) {
-    let spirv = Reflection::new_from_spirv(spirv).unwrap(); // TODO
+pub struct Spirv {
+    pub name: Ident,
+    pub specialization_constants: SpecializationConstants,
+}
 
-    let spec_constants = SpecializationConstants::from(&spirv);
+impl Spirv {
+    pub fn try_from_bytes(bytes: &[u8]) -> Self {
+        let spirv = Reflection::new_from_spirv(bytes).unwrap();
 
-    let mut tokens = TokenStream::new();
-    tokens = quote! {
-        #tokens
-        #spec_constants
-    };
+        let specialization_constants = SpecializationConstants::from(&spirv);
 
-    let file = syn::parse2(tokens).unwrap();
-    let output = unparse(&file);
-    println!("{}", output);
+        Self {
+            name: format_ident!("name"),
+            specialization_constants,
+        }
+    }
 
-    // TODO
+    pub fn pretty_string(&self) -> String {
+        let file = syn::parse2(self.to_token_stream()).unwrap();
+        unparse(&file)
+    }
+}
 
-    // OpSpecConstant
-    // OpVariable MUST have a storage class
-    // Storage classes:
-    // PushConstant
-    //
+impl ToTokens for Spirv {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let name = &self.name;
+        let specialization_constant = &self.specialization_constants;
+
+        let new_tokens = quote! {
+            pub mod #name {
+                #specialization_constant
+            }
+        };
+
+        tokens.extend(new_tokens);
+    }
 }

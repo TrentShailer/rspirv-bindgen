@@ -46,8 +46,8 @@ impl CStructField {
 
 impl ToTokens for CStructField {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let name = self.name.clone();
-        let field_type = self.field_type.clone();
+        let name = &self.name;
+        let field_type = &self.field_type;
 
         let new_tokens = if self.is_padding {
             quote! {
@@ -125,8 +125,7 @@ impl CStruct {
 impl ToTokens for CStruct {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let field_tokens = self.fields.iter();
-
-        let struct_name = self.name.clone();
+        let struct_name = &self.name;
 
         let new_tokens = quote! {
             #[repr(C)]
