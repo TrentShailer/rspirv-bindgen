@@ -1,0 +1,48 @@
+[package]
+name = "spirv-bindgen"
+description = "Generate Rust bindings for SPIR-V shaders."
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+authors = ["Trent Shailer"]
+
+[dependencies]
+# Error handling
+thiserror = { version = "2.0", default-features = false }
+
+# SPIR-V reflection
+rspirv-reflect = "0.9"
+
+# Vulkan structs
+ash = { version = "0.38", default-features = false }
+
+# Derives for raw bytes
+bytemuck = { version = "1.21", default-features = false, features = ["derive"] }
+
+# Generating source code
+syn = "2.0"
+quote = "1.0"
+proc-macro2 = { version = "1.0", default-features = false }
+prettyplease = "0.2"
+
+[lints.rust]
+"missing_docs" = "warn"
+"unused_qualifications" = "warn"
+"rust_2018_idioms" = "warn"
+"deprecated_in_future" = "warn"
+
+[lints.clippy]
+"alloc_instead_of_core" = "warn"
+"std_instead_of_alloc" = "warn"
+"std_instead_of_core" = "warn"
+
+"use_self" = "warn"
+"cast_lossless" = "warn"
+"unnecessary_self_imports" = "warn"
+"inconsistent_struct_constructor" = "warn"
+
+"clone_on_ref_ptr" = "warn"
+"todo" = "warn"
+
+"missing_safety_doc" = "allow"
