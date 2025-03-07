@@ -49,8 +49,14 @@ impl ToTokens for CStructField {
         let name = self.name.clone();
         let field_type = self.field_type.clone();
 
-        let new_tokens = quote! {
-            pub #name: #field_type
+        let new_tokens = if self.is_padding {
+            quote! {
+                #name: #field_type
+            }
+        } else {
+            quote! {
+                pub #name: #field_type
+            }
         };
 
         tokens.extend(new_tokens);
@@ -67,7 +73,7 @@ impl CStruct {
     pub fn new(name: Ident, fields: Vec<CStructField>) -> Self {
         let mut struct_fields = Vec::new();
         let mut layout = Layout::from_size_align(0, 1).unwrap();
-        let mut padding_count = 0;
+        let mut padding_count = 0u32;
 
         for field in fields {
             let (new_layout, offset) = layout.extend(field.layout).unwrap();
@@ -77,7 +83,7 @@ impl CStruct {
                 let padding = new_layout.size() - layout.size() - field.layout.size();
 
                 if padding != 0 {
-                    let name = format_ident!("{}padding", "_".repeat(padding_count + 1));
+                    let name = format_ident!("_padding{}", padding_count);
                     let new_field = CStructField::padding(name, padding).with_offset(layout.size());
 
                     struct_fields.push(new_field);
@@ -99,7 +105,7 @@ impl CStruct {
             let new_layout = layout.pad_to_align();
             let padding = new_layout.size() - layout.size();
             if padding != 0 {
-                let name = format_ident!("{}padding", "_".repeat(padding_count + 1));
+                let name = format_ident!("_padding{}", padding_count);
                 let new_field = CStructField::padding(name, padding).with_offset(layout.size());
 
                 struct_fields.push(new_field);
