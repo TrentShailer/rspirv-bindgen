@@ -3,14 +3,17 @@
 
 mod c_struct;
 mod debug;
+mod descriptors;
+mod entry_points;
 mod model;
-mod specialization_constant;
+mod push_constants;
+mod specialization_constants;
 
 use prettyplease::unparse;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use rspirv_reflect::Reflection;
-use specialization_constant::SpecializationConstants;
+use specialization_constants::SpecializationConstants;
 use syn::Ident;
 
 pub struct Spirv {
@@ -19,13 +22,13 @@ pub struct Spirv {
 }
 
 impl Spirv {
-    pub fn try_from_bytes(bytes: &[u8]) -> Self {
+    pub fn try_from_bytes<S: Into<String>>(name: S, bytes: &[u8]) -> Self {
         let spirv = Reflection::new_from_spirv(bytes).unwrap();
 
         let specialization_constants = SpecializationConstants::from(&spirv);
 
         Self {
-            name: format_ident!("name"),
+            name: format_ident!("{}", name.into()),
             specialization_constants,
         }
     }
