@@ -27,10 +27,37 @@ impl Type {
             Op::TypeInt | Op::TypeFloat => {
                 Scalar::parse_instruction(instruction, spirv).map(Self::Scalar)
             }
-            // Op::TypeVector => {}
+            Op::TypeVector => Vector::parse_instruction(instruction, spirv).map(Self::Vector),
             // Op::TypeArray => {}
             Op::TypeStruct => Structure::parse_instruction(instruction, spirv).map(Self::Struct),
             _ => None,
+        }
+    }
+
+    pub fn size(&self) -> usize {
+        match self {
+            Self::Scalar(scalar) => scalar.size(),
+            Self::Array(array) => array.size(),
+            Self::Vector(vector) => vector.size(),
+            Self::Struct(structure) => structure.size(),
+        }
+    }
+
+    pub fn alignment(&self) -> usize {
+        match self {
+            Self::Scalar(scalar) => scalar.alignment(),
+            Self::Array(array) => array.alignment(),
+            Self::Vector(vector) => vector.alignment(),
+            Self::Struct(structure) => structure.alignment(),
+        }
+    }
+
+    pub fn type_syntax(&self) -> syn::Type {
+        match self {
+            Self::Scalar(scalar) => scalar.type_syntax(),
+            Self::Array(array) => array.type_syntax(),
+            Self::Vector(vector) => vector.type_syntax(),
+            Self::Struct(structure) => structure.type_syntax(),
         }
     }
 }

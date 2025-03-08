@@ -1,10 +1,11 @@
+use quote::{ToTokens, quote};
 use rspirv_reflect::{
     Reflection,
     rspirv::dr::{Instruction, Operand},
     spirv::{Op, StorageClass},
 };
 
-use crate::model::Structure;
+use crate::{c_struct::CStruct, model::Structure};
 
 pub struct PushConstant {
     pub structure: Structure,
@@ -60,7 +61,19 @@ impl PushConstant {
 
         Some(Self {
             structure,
-            stages: todo!(),
+            stages: (), // TODO
         })
+    }
+}
+
+impl ToTokens for PushConstant {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        let struct_tokens = CStruct::from(&self.structure);
+
+        let new_tokens = quote! {
+            #struct_tokens
+        };
+
+        tokens.extend(new_tokens);
     }
 }

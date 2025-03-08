@@ -1,3 +1,6 @@
+use core::alloc::Layout;
+
+use quote::format_ident;
 use rspirv_reflect::{
     Reflection,
     rspirv::dr::{Instruction, Operand},
@@ -70,23 +73,25 @@ impl Structure {
                         return None;
                     }
 
-                    let result_type = instruction.result_type?;
-                    if result_type != struct_id {
+                    let Some(Operand::IdRef(struct_type_id)) = instruction.operands.first() else {
+                        return None;
+                    };
+                    if *struct_type_id != struct_id {
                         return None;
                     }
 
-                    let Some(Operand::LiteralBit32(member)) = instruction.operands.first() else {
+                    let Some(Operand::LiteralBit32(member)) = instruction.operands.get(1) else {
                         return None;
                     };
 
                     if !matches!(
-                        instruction.operands.get(1),
+                        instruction.operands.get(2),
                         Some(Operand::Decoration(Decoration::Offset))
                     ) {
                         return None;
                     }
 
-                    let Some(Operand::LiteralBit32(offset)) = instruction.operands.get(2) else {
+                    let Some(Operand::LiteralBit32(offset)) = instruction.operands.get(3) else {
                         return None;
                     };
 
@@ -132,5 +137,32 @@ impl Structure {
         };
 
         Some(Self { name, members })
+    }
+
+    pub fn size(&self) -> usize {
+        let mut layout = Layout::from_size_align(0, 1).unwrap();
+
+        for member in &self.members {
+            let member_layout =
+                Layout::from_size_align(member.member_type.size(), member.member_type.alignment())
+                    .unwrap();
+
+            let (new_layout, _) = layout.extend(member_layout).unwrap();
+
+            layout = new_layout;
+        }
+
+        layout = layout.pad_to_align();
+
+        layout.size()
+    }
+
+    pub fn alignment(&self) -> usize {
+        4 // TODO this is probably incorrect
+    }
+
+    pub fn type_syntax(&self) -> syn::Type {
+        let name = format_ident!("{}", self.name);
+        syn::parse_quote! {#name}
     }
 }

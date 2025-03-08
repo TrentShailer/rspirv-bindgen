@@ -4,6 +4,8 @@ use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use syn::{Ident, Type};
 
+use crate::model::Structure;
+
 pub struct CStructField {
     pub name: Ident,
     pub layout: Layout,
@@ -118,6 +120,79 @@ impl CStruct {
             name,
             layout,
             fields: struct_fields,
+        }
+    }
+}
+
+impl From<&Structure> for CStruct {
+    fn from(value: &Structure) -> Self {
+        let name = format_ident!("{}", value.name);
+
+        let mut fields = Vec::new();
+        let mut offset = 0;
+        let mut padding_count: u32 = 0;
+        let mut layout = Layout::from_size_align(0, 1).unwrap();
+        for member in &value.members {
+            // Add any required padding
+            {
+                let padding_required = member.offset - offset;
+
+                if padding_required != 0 {
+                    let name = format_ident!("_padding{}", padding_count);
+
+                    let new_field = CStructField::padding(name, padding_required as usize)
+                        .with_offset(offset as usize);
+
+                    let (new_layout, _) = layout.extend(new_field.layout).unwrap();
+                    layout = new_layout;
+
+                    fields.push(new_field);
+
+                    offset += padding_required;
+                    padding_count += 1;
+                }
+            }
+
+            // Add the new field
+            {
+                let name = format_ident!("{}", member.name);
+
+                let field_layout = Layout::from_size_align(
+                    member.member_type.size(),
+                    member.member_type.alignment(),
+                )
+                .unwrap();
+
+                let new_field =
+                    CStructField::new(name, field_layout, member.member_type.type_syntax())
+                        .with_offset(member.offset as usize);
+
+                let (new_layout, _) = layout.extend(new_field.layout).unwrap();
+                layout = new_layout;
+
+                fields.push(new_field);
+                offset += member.member_type.size() as u32;
+            }
+        }
+
+        // Add any final padding
+        {
+            let new_layout = layout.pad_to_align();
+            let padding = new_layout.size() - layout.size();
+            if padding != 0 {
+                let name = format_ident!("_padding{}", padding_count);
+                let new_field = CStructField::padding(name, padding).with_offset(layout.size());
+
+                fields.push(new_field);
+            }
+
+            layout = new_layout;
+        }
+
+        Self {
+            name,
+            layout,
+            fields,
         }
     }
 }
