@@ -12,7 +12,7 @@ use syn::Ident;
 use crate::{
     c_struct::{CStruct, CStructField},
     debug::find_name_for_id,
-    model::Primitive,
+    model::{Scalar, Type},
 };
 
 #[derive(Debug)]
@@ -50,15 +50,15 @@ impl ToTokens for SpecializationConstants {
                 .iter()
                 .map(|spec_constant| {
                     let layout = Layout::from_size_align(
-                        spec_constant.data_type.byte_count(),
-                        spec_constant.data_type.alignment_required(),
+                        spec_constant.data_type.size(),
+                        spec_constant.data_type.alignment(),
                     )
                     .unwrap();
 
                     CStructField::new(
                         spec_constant.name_ident(),
                         layout,
-                        spec_constant.data_type.primitive_type(),
+                        spec_constant.data_type.type_syntax(),
                     )
                 })
                 .collect();
@@ -121,7 +121,7 @@ impl ToTokens for SpecializationConstants {
 pub struct SpecializationConstant {
     pub constant_id: u32,
     pub name: Option<String>,
-    pub data_type: Primitive,
+    pub data_type: Scalar,
 }
 
 impl SpecializationConstant {
@@ -159,7 +159,7 @@ impl SpecializationConstant {
             None
         })?;
 
-        // Find the primitive type for the spec constant.
+        // Find the type for the spec constant.
         let data_type = {
             let result_type_id = instruction.result_type?;
 
@@ -169,48 +169,11 @@ impl SpecializationConstant {
                 .iter()
                 .find(|instruction| instruction.result_id == Some(result_type_id))?;
 
-            match result_type.class.opcode {
-                Op::TypeInt => {
-                    let Operand::LiteralBit32(precision) = result_type.operands.first()? else {
-                        return None;
-                    };
+            let Some(Type::Scalar(scalar)) = Type::parse_instruction(result_type, spirv) else {
+                return None;
+            };
 
-                    let Operand::LiteralBit32(sign) = result_type.operands.get(1)? else {
-                        return None;
-                    };
-
-                    match sign {
-                        0 => match precision {
-                            8 => Primitive::U8,
-                            16 => Primitive::U16,
-                            32 => Primitive::U32,
-                            64 => Primitive::U64,
-                            v => panic!("u{v} is not supported."),
-                        },
-                        1 => match precision {
-                            8 => Primitive::I8,
-                            16 => Primitive::I16,
-                            32 => Primitive::I32,
-                            64 => Primitive::I64,
-                            v => panic!("i{v} is not supported."),
-                        },
-                        _ => unreachable!(),
-                    }
-                }
-                Op::TypeFloat => {
-                    let Operand::LiteralBit32(precision) = result_type.operands.first()? else {
-                        return None;
-                    };
-
-                    match precision {
-                        32 => Primitive::F32,
-                        64 => Primitive::F64,
-                        v => panic!("f{v} is not supported"),
-                    }
-                }
-
-                _ => return None,
-            }
+            scalar
         };
 
         Some(Self {

@@ -13,6 +13,7 @@ mod specialization_constants;
 use entry_points::EntryPoints;
 use prettyplease::unparse;
 use proc_macro2::TokenStream;
+use push_constants::PushConstant;
 use quote::{ToTokens, quote};
 use rspirv_reflect::Reflection;
 use specialization_constants::SpecializationConstants;
@@ -24,6 +25,9 @@ pub struct Spirv {
 
     /// The shader's entry points.
     pub entry_points: EntryPoints,
+
+    /// The shader's push constants.
+    pub push_constants: Vec<PushConstant>,
 }
 
 impl Spirv {
@@ -34,9 +38,17 @@ impl Spirv {
         let specialization_constants = SpecializationConstants::new(&spirv);
         let entry_points = EntryPoints::new(&spirv);
 
+        let push_constants = spirv
+            .0
+            .types_global_values
+            .iter()
+            .filter_map(|instruction| PushConstant::try_from(instruction, &spirv))
+            .collect();
+
         Self {
             specialization_constants,
             entry_points,
+            push_constants,
         }
     }
 
