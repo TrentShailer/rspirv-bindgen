@@ -6,7 +6,7 @@ use quote::{ToTokens, format_ident, quote};
 use rspirv_reflect::{
     Reflection,
     rspirv::dr::{Instruction, Operand},
-    spirv::{Decoration, Op, StorageClass},
+    spirv::{Decoration, ExecutionModel, Op, StorageClass},
 };
 
 use crate::{
@@ -24,6 +24,13 @@ pub struct VertexInputs {
 impl VertexInputs {
     pub fn for_entrypoint(entry_point: &Instruction, spirv: &Reflection) -> Option<Self> {
         if !matches!(entry_point.class.opcode, Op::EntryPoint) {
+            return None;
+        }
+
+        let Some(Operand::ExecutionModel(execution_model)) = entry_point.operands.first() else {
+            return None;
+        };
+        if !matches!(execution_model, ExecutionModel::Vertex) {
             return None;
         }
 
