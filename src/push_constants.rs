@@ -1,15 +1,20 @@
+use itertools::Itertools;
 use quote::{ToTokens, quote};
 use rspirv_reflect::{
     Reflection,
     rspirv::dr::{Instruction, Operand},
-    spirv::{Op, StorageClass},
+    spirv::{ExecutionModel, Op, StorageClass},
 };
 
-use crate::{c_struct::CStruct, model::Structure};
+use crate::{
+    c_struct::CStruct,
+    execution_model::execution_model_to_tokens,
+    model::{Structure, Type},
+};
 
 pub struct PushConstant {
     pub structure: Structure,
-    pub stages: (),
+    pub stages: Vec<ExecutionModel>,
 }
 
 impl PushConstant {
@@ -21,10 +26,11 @@ impl PushConstant {
         let Some(Operand::StorageClass(storage_class)) = instruction.operands.first() else {
             return None;
         };
-
         if !matches!(storage_class, StorageClass::PushConstant) {
             return None;
         }
+
+        let variable_id = instruction.result_id?;
 
         // Find the type of the push constant variable:
         let variable_type =
@@ -36,42 +42,64 @@ impl PushConstant {
                 })?
             };
 
-        // Handle variable type being a pointer
-        let structure = if matches!(variable_type.class.opcode, Op::TypePointer) {
-            if !matches!(
-                variable_type.operands.first(),
-                Some(Operand::StorageClass(StorageClass::PushConstant))
-            ) {
-                return None;
-            }
-
-            let Some(Operand::IdRef(variable_type_id)) = variable_type.operands.get(1) else {
-                return None;
-            };
-
-            // Resolve the type of the pointer
-            let type_instruction = spirv.0.types_global_values.iter().find(|instruction| {
-                instruction.result_id.unwrap_or(u32::MAX) == *variable_type_id
-            })?;
-
-            Structure::parse_instruction(type_instruction, spirv)?
-        } else {
+        // Resolve the type
+        let Some(Type::Struct(structure)) = Type::parse_instruction(variable_type, spirv) else {
             return None;
         };
 
-        Some(Self {
-            structure,
-            stages: (), // TODO
-        })
+        // Resolve the stages
+        let stages = spirv
+            .0
+            .entry_points
+            .iter()
+            .filter_map(|instruction| {
+                if instruction.operands[3..].iter().any(|operand| {
+                    let Operand::IdRef(id) = operand else {
+                        return false;
+                    };
+
+                    *id == variable_id
+                }) {
+                    if let Some(Operand::ExecutionModel(execution_model)) =
+                        instruction.operands.first()
+                    {
+                        Some(*execution_model)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .unique()
+            .collect();
+
+        Some(Self { structure, stages })
     }
 }
 
 impl ToTokens for PushConstant {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let struct_tokens = CStruct::from(&self.structure);
+        let c_struct = CStruct::from(&self.structure);
+        let name = self.structure.name_ident();
+        let size = c_struct.layout.size() as u32;
+
+        let stage_tokens_1 = self.stages.iter().map(execution_model_to_tokens);
+        let stage_tokens_2 = stage_tokens_1.clone();
 
         let new_tokens = quote! {
-            #struct_tokens
+            #c_struct
+
+            impl #name {
+                pub const STAGES: ash::vk::ShaderStageFlags = #( #stage_tokens_1 )|* ;
+
+                pub fn push_constant_range() -> ash::vk::PushConstantRange {
+                    ash::vk::PushConstantRange::default()
+                        .offset(0)
+                        .size( #size )
+                        .stage_flags( #( #stage_tokens_2 )|* )
+                }
+            }
         };
 
         tokens.extend(new_tokens);

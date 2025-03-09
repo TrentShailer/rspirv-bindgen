@@ -1,5 +1,6 @@
 use core::alloc::Layout;
 
+use convert_case::{Case, Casing};
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use syn::{Ident, Type};
@@ -85,7 +86,7 @@ impl CStruct {
                 let padding = new_layout.size() - layout.size() - field.layout.size();
 
                 if padding != 0 {
-                    let name = format_ident!("_padding{}", padding_count);
+                    let name = format_ident!("_padding_{}", padding_count);
                     let new_field = CStructField::padding(name, padding).with_offset(layout.size());
 
                     struct_fields.push(new_field);
@@ -107,7 +108,7 @@ impl CStruct {
             let new_layout = layout.pad_to_align();
             let padding = new_layout.size() - layout.size();
             if padding != 0 {
-                let name = format_ident!("_padding{}", padding_count);
+                let name = format_ident!("_padding_{}", padding_count);
                 let new_field = CStructField::padding(name, padding).with_offset(layout.size());
 
                 struct_fields.push(new_field);
@@ -126,7 +127,7 @@ impl CStruct {
 
 impl From<&Structure> for CStruct {
     fn from(value: &Structure) -> Self {
-        let name = format_ident!("{}", value.name);
+        let name = format_ident!("{}", value.name.to_case(Case::UpperCamel));
 
         let mut fields = Vec::new();
         let mut offset = 0;
@@ -138,7 +139,7 @@ impl From<&Structure> for CStruct {
                 let padding_required = member.offset - offset;
 
                 if padding_required != 0 {
-                    let name = format_ident!("_padding{}", padding_count);
+                    let name = format_ident!("_padding_{}", padding_count);
 
                     let new_field = CStructField::padding(name, padding_required as usize)
                         .with_offset(offset as usize);
@@ -155,7 +156,7 @@ impl From<&Structure> for CStruct {
 
             // Add the new field
             {
-                let name = format_ident!("{}", member.name);
+                let name = format_ident!("{}", member.name.to_case(Case::Snake));
 
                 let field_layout = Layout::from_size_align(
                     member.member_type.size(),
@@ -180,7 +181,7 @@ impl From<&Structure> for CStruct {
             let new_layout = layout.pad_to_align();
             let padding = new_layout.size() - layout.size();
             if padding != 0 {
-                let name = format_ident!("_padding{}", padding_count);
+                let name = format_ident!("_padding_{}", padding_count);
                 let new_field = CStructField::padding(name, padding).with_offset(layout.size());
 
                 fields.push(new_field);

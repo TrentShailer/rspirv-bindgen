@@ -1,5 +1,6 @@
 use core::alloc::Layout;
 
+use convert_case::{Case, Casing};
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use rspirv_reflect::{
@@ -188,7 +189,7 @@ impl SpecializationConstant {
             .name
             .clone()
             .unwrap_or(format!("n{}", self.constant_id))
-            .to_lowercase();
+            .to_case(Case::Snake);
 
         format_ident!("{}", name_string)
     }

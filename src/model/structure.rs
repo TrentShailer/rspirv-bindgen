@@ -1,5 +1,6 @@
 use core::alloc::Layout;
 
+use convert_case::{Case, Casing};
 use quote::format_ident;
 use rspirv_reflect::{
     Reflection,
@@ -114,7 +115,7 @@ impl Structure {
                                 None
                             }
                         })
-                        .unwrap_or_else(|| format!("m{index}"));
+                        .unwrap_or_else(|| format!("field_{index}"));
 
                     let offset = offsets
                         .iter()
@@ -161,8 +162,12 @@ impl Structure {
         4 // TODO this is probably incorrect
     }
 
+    pub fn name_ident(&self) -> syn::Ident {
+        format_ident!("{}", self.name.to_case(Case::UpperCamel))
+    }
+
     pub fn type_syntax(&self) -> syn::Type {
-        let name = format_ident!("{}", self.name);
+        let name = self.name_ident();
         syn::parse_quote! {#name}
     }
 }

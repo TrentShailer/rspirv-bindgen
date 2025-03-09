@@ -1,6 +1,10 @@
 pub use array::*;
 pub use matrix::*;
-use rspirv_reflect::{Reflection, rspirv::dr::Instruction, spirv::Op};
+use rspirv_reflect::{
+    Reflection,
+    rspirv::dr::{Instruction, Operand},
+    spirv::Op,
+};
 pub use scalar::*;
 pub use structure::*;
 pub use vector::*;
@@ -28,8 +32,19 @@ impl Type {
                 Scalar::parse_instruction(instruction, spirv).map(Self::Scalar)
             }
             Op::TypeVector => Vector::parse_instruction(instruction, spirv).map(Self::Vector),
-            // Op::TypeArray => {}
+            Op::TypeArray => Array::parse_instruction(instruction, spirv).map(Self::Array),
             Op::TypeStruct => Structure::parse_instruction(instruction, spirv).map(Self::Struct),
+            Op::TypePointer => {
+                let Some(Operand::IdRef(pointer_type_id)) = instruction.operands.get(1) else {
+                    return None;
+                };
+
+                let pointer_type = spirv.0.types_global_values.iter().find(|instruction| {
+                    instruction.result_id.unwrap_or(u32::MAX) == *pointer_type_id
+                })?;
+
+                Self::parse_instruction(pointer_type, spirv)
+            }
             _ => None,
         }
     }

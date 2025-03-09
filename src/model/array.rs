@@ -1,3 +1,9 @@
+use rspirv_reflect::{
+    Reflection,
+    rspirv::dr::{Instruction, Operand},
+    spirv::Op,
+};
+
 use super::Type;
 
 /// A parsed `OpTypeArray`.
@@ -8,10 +14,38 @@ pub struct Array {
 }
 
 impl Array {
+    pub fn parse_instruction(instruction: &Instruction, spirv: &Reflection) -> Option<Self> {
+        if !matches!(instruction.class.opcode, Op::TypeArray) {
+            return None;
+        }
+
+        let Some(Operand::IdRef(element_type_id)) = instruction.operands.first() else {
+            return None;
+        };
+
+        let element_type = spirv.0.types_global_values.iter().find_map(|instruction| {
+            if instruction.result_id.unwrap_or(u32::MAX) == *element_type_id {
+                Type::parse_instruction(instruction, spirv)
+            } else {
+                None
+            }
+        })?;
+
+        let Some(Operand::LiteralBit32(length)) = instruction.operands.get(1) else {
+            return None;
+        };
+
+        Some(Self {
+            element_type: Box::new(element_type),
+            length: *length,
+        })
+    }
+
     pub fn size(&self) -> usize {
         let element_size = self.element_type.size();
 
         // TODO elements may have padding between them
+        // ArrayStride decorations
 
         element_size * self.length as usize
     }
