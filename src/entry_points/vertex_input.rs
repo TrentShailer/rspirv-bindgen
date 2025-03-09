@@ -1,16 +1,24 @@
+use core::alloc::Layout;
+
+use convert_case::{Case, Casing};
 use itertools::Itertools;
-use quote::ToTokens;
+use quote::{ToTokens, format_ident, quote};
 use rspirv_reflect::{
     Reflection,
     rspirv::dr::{Instruction, Operand},
     spirv::{Decoration, Op, StorageClass},
 };
 
-use crate::{debug::find_name_for_id, model::Type};
+use crate::{
+    c_struct::{CStruct, CStructField},
+    debug::find_name_for_id,
+    model::{Structure, Type},
+};
 
 #[derive(Debug)]
 pub struct VertexInputs {
     pub inputs: Vec<VertexInput>,
+    pub instance_input_location: Option<usize>,
 }
 
 impl VertexInputs {
@@ -42,20 +50,76 @@ impl VertexInputs {
             return None;
         }
 
-        Some(Self { inputs })
+        Some(Self {
+            inputs,
+            instance_input_location: None,
+        })
     }
 }
 
 impl ToTokens for VertexInputs {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        // TODO
-        // The shader code does not identify the input rate of each vertex input
-        // One struct should be generated for each input rate.
-        // The descriptions need to match this input rate.
+        let (vertex_inputs, instance_inputs) = {
+            let split_index = match self.instance_input_location {
+                Some(index) => {
+                    if index > self.inputs.len() {
+                        self.inputs.len()
+                    } else {
+                        index
+                    }
+                }
+                None => self.inputs.len(),
+            };
+
+            self.inputs.split_at(split_index)
+        };
+
+        let vertex_structure = {
+            if vertex_inputs.is_empty() {
+                None
+            } else {
+                let fields: Vec<_> = vertex_inputs
+                    .iter()
+                    .map(|input| {
+                        let name = format_ident!("{}", input.name.to_case(Case::Snake));
+                        let layout = Layout::try_from(&input.data_type).unwrap();
+                        CStructField::new(name, layout, input.data_type.type_syntax())
+                    })
+                    .collect();
+
+                let name = format_ident!("Vertex");
+
+                Some(CStruct::new(name, fields))
+            }
+        };
+
+        let instance_structure = {
+            if instance_inputs.is_empty() {
+                None
+            } else {
+                let fields: Vec<_> = instance_inputs
+                    .iter()
+                    .map(|input| {
+                        let name = format_ident!("{}", input.name.to_case(Case::Snake));
+                        let layout = Layout::try_from(&input.data_type).unwrap();
+                        CStructField::new(name, layout, input.data_type.type_syntax())
+                    })
+                    .collect();
+
+                let name = format_ident!("Instance");
+
+                Some(CStruct::new(name, fields))
+            }
+        };
+
+        let new_tokens = quote! {
+            #vertex_structure
+            #instance_structure
+        };
+
+        tokens.extend(new_tokens);
+
         //
-        // * Provide config via CLI arguments and/or a config file.
-        // * Detect based on some semantic styling in code, e.g., argument names.
-        // * Only support vertex input rate
 
         /*
         #[repr(C)]

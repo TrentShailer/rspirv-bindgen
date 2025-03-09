@@ -1,3 +1,5 @@
+use core::alloc::{Layout, LayoutError};
+
 pub use array::*;
 pub use matrix::*;
 use rspirv_reflect::{
@@ -83,5 +85,13 @@ impl Type {
             Self::Vector(vector) => vector.type_syntax(),
             Self::Struct(structure) => structure.type_syntax(),
         }
+    }
+}
+
+impl TryFrom<&Type> for Layout {
+    type Error = LayoutError;
+
+    fn try_from(value: &Type) -> Result<Self, Self::Error> {
+        Layout::from_size_align(value.size(), value.alignment())
     }
 }
