@@ -20,6 +20,8 @@ struct Cli {
 
 fn main() {
     let cli = Cli::parse();
+    // TODO generate bindings for all files in a directory
+    // TODO directory drilling?
 
     let source_bytes = fs::read(&cli.source).unwrap();
 

@@ -29,3 +29,25 @@ pub fn execution_model_to_tokens(execution_model: &ExecutionModel) -> TokenStrea
         ExecutionModel::MeshEXT => quote! {ash::vk::ShaderStageFlags::MESH_EXT},
     }
 }
+
+pub fn execution_model_to_string(execution_model: &ExecutionModel) -> &'static str {
+    match execution_model {
+        ExecutionModel::Vertex => "vertex",
+        ExecutionModel::TessellationControl => "tessellation_control",
+        ExecutionModel::TessellationEvaluation => "tessellation_evaluation",
+        ExecutionModel::Geometry => "geometry",
+        ExecutionModel::Fragment => "fragment",
+        ExecutionModel::GLCompute => "compute",
+        ExecutionModel::Kernel => "kernel",
+        ExecutionModel::TaskNV => "task_nv",
+        ExecutionModel::MeshNV => "mesh_nv",
+        ExecutionModel::RayGenerationNV => "ray_generation_nv",
+        ExecutionModel::IntersectionNV => "intersection_nv",
+        ExecutionModel::AnyHitNV => "any_hit_nv",
+        ExecutionModel::ClosestHitNV => "closest_hit_nv",
+        ExecutionModel::MissNV => "miss_nv",
+        ExecutionModel::CallableNV => "callable_nv",
+        ExecutionModel::TaskEXT => "task_ext",
+        ExecutionModel::MeshEXT => "mesh_ext",
+    }
+}

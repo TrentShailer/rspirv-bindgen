@@ -45,6 +45,15 @@ impl Type {
 
                 Self::parse_instruction(pointer_type, spirv)
             }
+            Op::Variable => {
+                let result_type_id = instruction.result_type?;
+
+                let result_type = spirv.0.types_global_values.iter().find(|instruction| {
+                    instruction.result_id.unwrap_or(u32::MAX) == result_type_id
+                })?;
+
+                Self::parse_instruction(result_type, spirv)
+            }
             _ => None,
         }
     }

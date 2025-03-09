@@ -6,4 +6,5 @@ slangc -target spirv -profile spirv_1_4 tests/data/render_capture.slang -o tests
 slangc -target spirv -profile spirv_1_4 tests/data/render_line.slang -o tests/data/spv/render_line.spv
 slangc -target spirv -profile spirv_1_4 tests/data/maximum_reduction.slang -o tests/data/spv/maximum_reduction.spv
 slangc -target spirv -profile spirv_1_4 tests/data/push_constants.slang -o tests/data/spv/push_constants.spv
+slangc -target spirv -profile spirv_1_4 tests/data/render_selection.slang -o tests/data/spv/render_selection.spv
 ```
