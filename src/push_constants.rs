@@ -7,9 +7,8 @@ use rspirv_reflect::{
 };
 
 use crate::{
-    c_struct::CStruct,
     execution_model::execution_model_to_tokens,
-    model::{Structure, Type},
+    model::{FromInstruction, Structure, Type},
 };
 
 pub struct PushConstant {
@@ -43,7 +42,7 @@ impl PushConstant {
             };
 
         // Resolve the type
-        let Some(Type::Struct(structure)) = Type::parse_instruction(variable_type, spirv) else {
+        let Some(Type::Struct(structure)) = Type::from_instruction(variable_type, spirv) else {
             return None;
         };
 
@@ -80,15 +79,15 @@ impl PushConstant {
 
 impl ToTokens for PushConstant {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let c_struct = CStruct::from(&self.structure);
+        let structure = &self.structure;
         let name = self.structure.name_ident();
-        let size = c_struct.layout.size() as u32;
+        let size = self.structure.layout.size() as u32;
 
         let stage_tokens_1 = self.stages.iter().map(execution_model_to_tokens);
         let stage_tokens_2 = stage_tokens_1.clone();
 
         let new_tokens = quote! {
-            #c_struct
+            #structure
 
             impl #name {
                 pub const STAGES: ash::vk::ShaderStageFlags = #( #stage_tokens_1 )|* ;

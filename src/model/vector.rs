@@ -1,20 +1,22 @@
+use proc_macro2::TokenStream;
+use quote::{format_ident, quote};
 use rspirv_reflect::{
     Reflection,
     rspirv::dr::{Instruction, Operand},
     spirv::Op,
 };
 
-use super::Scalar;
+use super::{FromInstruction, ModelType, Scalar, VulkanFormat};
 
 /// A parsed `OpTypeVector`.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Vector {
     pub component_type: Scalar,
     pub component_count: u32,
 }
 
-impl Vector {
-    pub fn parse_instruction(instruction: &Instruction, spirv: &Reflection) -> Option<Self> {
+impl FromInstruction for Vector {
+    fn from_instruction(instruction: &Instruction, spirv: &Reflection) -> Option<Self> {
         if !matches!(instruction.class.opcode, Op::TypeVector) {
             return None;
         }
@@ -25,7 +27,7 @@ impl Vector {
 
         let component_type = spirv.0.types_global_values.iter().find_map(|instruction| {
             if instruction.result_id.unwrap_or(u32::MAX) == *component_type_id {
-                Scalar::parse_instruction(instruction, spirv)
+                Scalar::from_instruction(instruction, spirv)
             } else {
                 None
             }
@@ -40,21 +42,48 @@ impl Vector {
             component_count: *component_count,
         })
     }
+}
 
-    pub fn size(&self) -> usize {
+impl ModelType for Vector {
+    fn size(&self) -> usize {
         let component_size = self.component_type.size();
 
         component_size * self.component_count as usize
     }
 
-    pub fn alignment(&self) -> usize {
+    fn alignment(&self) -> usize {
         self.component_type.alignment()
     }
 
-    pub fn type_syntax(&self) -> syn::Type {
-        let component_type = self.component_type.type_syntax();
+    fn to_type_syntax(&self) -> syn::Type {
+        let component_type = self.component_type.to_type_syntax();
         let count = self.component_count as usize;
 
         syn::parse_quote! {[#component_type; #count]}
+    }
+}
+
+impl VulkanFormat for Vector {
+    fn to_format_tokens(&self) -> TokenStream {
+        let bit_count = self.component_type.size() * 8;
+        let components = match self.component_count {
+            1 => format!("R{bit_count}"),
+            2 => format!("R{bit_count}G{bit_count}"),
+            3 => format!("R{bit_count}G{bit_count}B{bit_count}"),
+            4 => format!("R{bit_count}G{bit_count}B{bit_count}A{bit_count}"),
+            n => panic!("Invalid vector component count: {n}"),
+        };
+
+        let unit = match self.component_type {
+            Scalar::U8 | Scalar::U16 | Scalar::U32 | Scalar::U64 => "UINT",
+            Scalar::I8 | Scalar::I16 | Scalar::I32 | Scalar::I64 => "SINT",
+            Scalar::F32 | Scalar::F64 => "SFLOAT",
+        };
+
+        let format = format_ident!("{components}_{unit}");
+
+        quote! {
+            ash::vk::Format::#format
+        }
     }
 }

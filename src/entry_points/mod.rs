@@ -72,7 +72,7 @@ impl EntryPoint {
 
         let dispatch = Dispatch::for_entrypoint(*entry_point_id, spirv);
 
-        let vertex_inputs = VertexInputs::for_entrypoint(instruction, spirv);
+        let vertex_inputs = VertexInputs::for_entrypoint(instruction, spirv, None); // TODO
 
         Some(Self {
             name: name.clone(),

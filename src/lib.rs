@@ -2,7 +2,6 @@
 //! Library to generate Rust bindings for Spir-V shaders.
 //!
 
-mod c_struct;
 mod debug;
 mod descriptors;
 mod entry_points;
@@ -36,7 +35,7 @@ impl Spirv {
     pub fn try_from_bytes(bytes: &[u8]) -> Self {
         let spirv = Reflection::new_from_spirv(bytes).unwrap();
 
-        let specialization_constants = SpecializationConstants::new(&spirv);
+        let specialization_constants = SpecializationConstants::from_spirv(&spirv);
         let entry_points = EntryPoints::new(&spirv);
 
         let push_constants = spirv
