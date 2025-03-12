@@ -11,7 +11,7 @@ use rspirv_reflect::{
 
 use crate::debug::find_name_for_id;
 
-use super::{FromInstruction, ModelType, Type};
+use super::{FromInstruction, ModelType, ToType, Type};
 
 mod member;
 
@@ -158,11 +158,6 @@ impl ModelType for Structure {
     fn alignment(&self) -> usize {
         self.layout.align()
     }
-
-    fn to_type_syntax(&self) -> syn::Type {
-        let name = self.name_ident();
-        syn::parse_quote! {#name}
-    }
 }
 
 impl ToTokens for Structure {
@@ -179,5 +174,12 @@ impl ToTokens for Structure {
         };
 
         tokens.extend(new_tokens);
+    }
+}
+
+impl ToType for Structure {
+    fn to_type_syntax(&self) -> syn::Type {
+        let name = self.name_ident();
+        syn::parse_quote! {#name}
     }
 }

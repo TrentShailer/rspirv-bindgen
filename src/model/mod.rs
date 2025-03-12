@@ -24,17 +24,19 @@ pub trait FromInstruction {
         Self: Sized;
 }
 
+pub trait ToType {
+    fn to_type_syntax(&self) -> syn::Type;
+}
+
 pub trait ModelType {
     fn size(&self) -> usize;
 
     fn alignment(&self) -> usize;
 
-    fn to_type_syntax(&self) -> syn::Type;
-
     fn layout(&self) -> Layout {
         Layout::from_size_align(self.size(), self.alignment()).unwrap()
     }
-} // TODO Type should always be + ToTokens
+}
 
 pub trait VulkanFormat {
     fn to_format_tokens(&self) -> TokenStream;
@@ -104,7 +106,9 @@ impl ModelType for Type {
             Self::Struct(structure) => structure.alignment(),
         }
     }
+}
 
+impl ToType for Type {
     fn to_type_syntax(&self) -> syn::Type {
         match self {
             Self::Scalar(scalar) => scalar.to_type_syntax(),

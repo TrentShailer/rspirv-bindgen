@@ -6,7 +6,7 @@ use rspirv_reflect::{
     spirv::Op,
 };
 
-use super::{FromInstruction, ModelType, Scalar, VulkanFormat};
+use super::{FromInstruction, ModelType, Scalar, ToType, VulkanFormat};
 
 /// A parsed `OpTypeVector`.
 #[derive(Debug, Clone)]
@@ -54,13 +54,6 @@ impl ModelType for Vector {
     fn alignment(&self) -> usize {
         self.component_type.alignment()
     }
-
-    fn to_type_syntax(&self) -> syn::Type {
-        let component_type = self.component_type.to_type_syntax();
-        let count = self.component_count as usize;
-
-        syn::parse_quote! {[#component_type; #count]}
-    }
 }
 
 impl VulkanFormat for Vector {
@@ -85,5 +78,14 @@ impl VulkanFormat for Vector {
         quote! {
             ash::vk::Format::#format
         }
+    }
+}
+
+impl ToType for Vector {
+    fn to_type_syntax(&self) -> syn::Type {
+        let component_type = self.component_type.to_type_syntax();
+        let count = self.component_count as usize;
+
+        syn::parse_quote! {[#component_type; #count]}
     }
 }

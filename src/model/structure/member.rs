@@ -8,7 +8,7 @@ use rspirv_reflect::{
 
 use crate::{
     debug::find_member_name,
-    model::{Array, FromInstruction, ModelType, Scalar, Type},
+    model::{Array, FromInstruction, Scalar, ToType, Type},
 };
 
 /// A parsed `OpTypeStruct` member.

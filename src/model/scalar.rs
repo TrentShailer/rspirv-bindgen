@@ -5,7 +5,7 @@ use rspirv_reflect::{
     spirv::Op,
 };
 
-use super::{FromInstruction, ModelType, VulkanFormat};
+use super::{FromInstruction, ModelType, ToType, VulkanFormat};
 
 /// A parsed `OpTypeInt` or `OpTypeFloat`.
 #[derive(Debug, Clone)]
@@ -104,21 +104,6 @@ impl ModelType for Scalar {
             Self::F64 => align_of::<f64>(),
         }
     }
-
-    fn to_type_syntax(&self) -> syn::Type {
-        match self {
-            Self::U8 => syn::parse_quote! {u8},
-            Self::U16 => syn::parse_quote! {u16},
-            Self::U32 => syn::parse_quote! {u32},
-            Self::U64 => syn::parse_quote! {u64},
-            Self::I8 => syn::parse_quote! {i8},
-            Self::I16 => syn::parse_quote! {i16},
-            Self::I32 => syn::parse_quote! {i32},
-            Self::I64 => syn::parse_quote! {i64},
-            Self::F32 => syn::parse_quote! {f32},
-            Self::F64 => syn::parse_quote! {f64},
-        }
-    }
 }
 
 impl VulkanFormat for Scalar {
@@ -134,6 +119,22 @@ impl VulkanFormat for Scalar {
             Self::I64 => syn::parse_quote! {ash::vk::Format::R64_SINT},
             Self::F32 => syn::parse_quote! {ash::vk::Format::R32_SFLOAT},
             Self::F64 => syn::parse_quote! {ash::vk::Format::R64_SFLOAT},
+        }
+    }
+}
+impl ToType for Scalar {
+    fn to_type_syntax(&self) -> syn::Type {
+        match self {
+            Self::U8 => syn::parse_quote! {u8},
+            Self::U16 => syn::parse_quote! {u16},
+            Self::U32 => syn::parse_quote! {u32},
+            Self::U64 => syn::parse_quote! {u64},
+            Self::I8 => syn::parse_quote! {i8},
+            Self::I16 => syn::parse_quote! {i16},
+            Self::I32 => syn::parse_quote! {i32},
+            Self::I64 => syn::parse_quote! {i64},
+            Self::F32 => syn::parse_quote! {f32},
+            Self::F64 => syn::parse_quote! {f64},
         }
     }
 }

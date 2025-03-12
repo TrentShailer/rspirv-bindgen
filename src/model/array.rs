@@ -4,7 +4,7 @@ use rspirv_reflect::{
     spirv::Op,
 };
 
-use super::{FromInstruction, ModelType, Type};
+use super::{FromInstruction, ModelType, ToType, Type};
 
 /// A parsed `OpTypeArray`.
 #[derive(Debug, Clone)]
@@ -64,7 +64,9 @@ impl ModelType for Array {
     fn alignment(&self) -> usize {
         self.element_type.alignment()
     }
+}
 
+impl ToType for Array {
     fn to_type_syntax(&self) -> syn::Type {
         let element_type = self.element_type.to_type_syntax();
         let length = self.length as usize;
