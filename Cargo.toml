@@ -12,7 +12,8 @@ authors = ["Trent Shailer"]
 thiserror = { version = "2.0", default-features = false }
 
 # SPIR-V reflection
-rspirv-reflect = "0.9"
+rspirv = "0.12"
+spirv = "0.3"
 
 # Vulkan structs
 ash = { version = "0.38", default-features = false }

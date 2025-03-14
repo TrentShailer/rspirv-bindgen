@@ -1,10 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
-use rspirv_reflect::{
-    Reflection,
-    rspirv::dr::{Instruction, Operand},
-    spirv::Op,
-};
+use rspirv::dr::{Instruction, Module, Operand};
+use spirv::Op;
 
 use super::{FromInstruction, ModelType, Scalar, ToType, VulkanFormat};
 
@@ -16,7 +13,7 @@ pub struct Vector {
 }
 
 impl FromInstruction for Vector {
-    fn from_instruction(instruction: &Instruction, spirv: &Reflection) -> Option<Self> {
+    fn from_instruction(instruction: &Instruction, spirv: &Module) -> Option<Self> {
         if !matches!(instruction.class.opcode, Op::TypeVector) {
             return None;
         }
@@ -25,7 +22,7 @@ impl FromInstruction for Vector {
             return None;
         };
 
-        let component_type = spirv.0.types_global_values.iter().find_map(|instruction| {
+        let component_type = spirv.types_global_values.iter().find_map(|instruction| {
             if instruction.result_id.unwrap_or(u32::MAX) == *component_type_id {
                 Scalar::from_instruction(instruction, spirv)
             } else {

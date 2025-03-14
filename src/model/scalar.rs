@@ -1,9 +1,6 @@
 use proc_macro2::TokenStream;
-use rspirv_reflect::{
-    Reflection,
-    rspirv::dr::{Instruction, Operand},
-    spirv::Op,
-};
+use rspirv::dr::{Instruction, Module, Operand};
+use spirv::Op;
 
 use super::{FromInstruction, ModelType, ToType, VulkanFormat};
 
@@ -24,7 +21,7 @@ pub enum Scalar {
 }
 
 impl FromInstruction for Scalar {
-    fn from_instruction(instruction: &Instruction, _spirv: &Reflection) -> Option<Self> {
+    fn from_instruction(instruction: &Instruction, _spirv: &Module) -> Option<Self> {
         match instruction.class.opcode {
             Op::TypeInt => {
                 let Operand::LiteralBit32(precision) = instruction.operands.first()? else {

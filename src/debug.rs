@@ -1,8 +1,8 @@
-use rspirv_reflect::{Reflection, rspirv::dr::Operand, spirv::Op};
+use rspirv::dr::{Module, Operand};
+use spirv::Op;
 
-pub fn find_name_for_id(id: u32, spirv: &Reflection) -> Option<&String> {
+pub fn find_name_for_id(id: u32, spirv: &Module) -> Option<&String> {
     spirv
-        .0
         .debug_names
         .iter()
         .find_map(|instruction| match instruction.class.opcode {
@@ -22,9 +22,8 @@ pub fn find_name_for_id(id: u32, spirv: &Reflection) -> Option<&String> {
         })
 }
 
-pub fn find_member_name(struct_id: u32, member_index: u32, spirv: &Reflection) -> Option<&String> {
+pub fn find_member_name(struct_id: u32, member_index: u32, spirv: &Module) -> Option<&String> {
     spirv
-        .0
         .debug_names
         .iter()
         .find_map(|instruction| match instruction.class.opcode {

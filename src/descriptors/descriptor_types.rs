@@ -1,11 +1,10 @@
-use rspirv_reflect::{
-    rspirv::dr::Operand,
-    spirv::{Decoration, Dim, Op, StorageClass},
-};
+use rspirv::dr::{Instruction, Module, Operand};
+use spirv::{Decoration, Dim, Op, StorageClass};
 
 use crate::model::{FromInstruction, ToType};
 
 // From Table 3 https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-resources-descset
+#[derive(Debug)]
 pub enum DescriptorType {
     Sampler,
     SampledImage,
@@ -21,15 +20,12 @@ pub enum DescriptorType {
 }
 
 impl FromInstruction for DescriptorType {
-    fn from_instruction(
-        instruction: &rspirv_reflect::rspirv::dr::Instruction,
-        spirv: &rspirv_reflect::Reflection,
-    ) -> Option<Self> {
+    fn from_instruction(instruction: &Instruction, spirv: &Module) -> Option<Self> {
         if !matches!(instruction.class.opcode, Op::Variable) {
             return None;
         }
 
-        let Some(Operand::StorageClass(storage_class)) = instruction.operands.get(1) else {
+        let Some(Operand::StorageClass(storage_class)) = instruction.operands.first() else {
             return None;
         };
 
@@ -37,7 +33,6 @@ impl FromInstruction for DescriptorType {
             let pointer_id = instruction.result_type?;
 
             spirv
-                .0
                 .types_global_values
                 .iter()
                 .find(|instruction| instruction.result_id.unwrap_or(u32::MAX) == pointer_id)?
@@ -49,7 +44,6 @@ impl FromInstruction for DescriptorType {
             };
 
             spirv
-                .0
                 .types_global_values
                 .iter()
                 .find(|instruction| instruction.result_id.unwrap_or(u32::MAX) == *result_type_id)?
@@ -92,7 +86,7 @@ impl FromInstruction for DescriptorType {
                     Some(Self::StorageBuffer)
                 } else {
                     // If decorated if BufferBlock -> Storage buffer
-                    let buffer_block = spirv.0.annotations.iter().any(|annotation| {
+                    let buffer_block = spirv.annotations.iter().any(|annotation| {
                         if !matches!(annotation.class.opcode, Op::Decorate) {
                             return false;
                         }

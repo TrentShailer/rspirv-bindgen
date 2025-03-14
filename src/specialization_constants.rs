@@ -1,11 +1,9 @@
 use itertools::Itertools;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use rspirv_reflect::{
-    Reflection,
-    rspirv::dr::Operand,
-    spirv::{Decoration, Op},
-};
+use rspirv::dr::Module;
+use rspirv::dr::Operand;
+use spirv::{Decoration, Op};
 
 use crate::{
     debug::find_name_for_id,
@@ -18,9 +16,8 @@ pub struct SpecializationConstants {
 }
 
 impl SpecializationConstants {
-    pub fn from_spirv(spirv: &Reflection) -> Option<Self> {
+    pub fn from_spirv(spirv: &Module) -> Option<Self> {
         let constants: Vec<_> = spirv
-            .0
             .types_global_values
             .iter()
             .filter_map(|instruction| {
@@ -32,7 +29,7 @@ impl SpecializationConstants {
                 let result_type_id = instruction.result_type?;
 
                 // Find the constant id for this spec constant.
-                let constant_id = spirv.0.annotations.iter().find_map(|annotation| {
+                let constant_id = spirv.annotations.iter().find_map(|annotation| {
                     if annotation.class.opcode == Op::Decorate {
                         let target = annotation.operands.first()?.id_ref_any()?;
                         if target != result_id {
@@ -63,7 +60,6 @@ impl SpecializationConstants {
                 // Resolve the type of the spec constant
                 let constant_type = {
                     let result_type = spirv
-                        .0
                         .types_global_values
                         .iter()
                         .find(|instruction| instruction.result_id == Some(result_type_id))?;

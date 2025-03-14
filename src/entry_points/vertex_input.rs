@@ -1,11 +1,8 @@
 use itertools::Itertools;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use rspirv_reflect::{
-    Reflection,
-    rspirv::dr::{Instruction, Operand},
-    spirv::{Decoration, ExecutionModel, Op, StorageClass},
-};
+use rspirv::dr::{Instruction, Module, Operand};
+use spirv::{Decoration, ExecutionModel, Op, StorageClass};
 
 use crate::{
     debug::find_name_for_id,
@@ -21,7 +18,7 @@ pub struct VertexInputs {
 impl VertexInputs {
     pub fn for_entrypoint(
         entry_point: &Instruction,
-        spirv: &Reflection,
+        spirv: &Module,
         split_index: Option<usize>,
     ) -> Option<Self> {
         if !matches!(entry_point.class.opcode, Op::EntryPoint) {
@@ -44,7 +41,6 @@ impl VertexInputs {
 
                 // Find the instruction
                 let instruction = spirv
-                    .0
                     .types_global_values
                     .iter()
                     .find(|instruction| instruction.result_id.unwrap_or(u32::MAX) == *id)?;
@@ -62,7 +58,7 @@ impl VertexInputs {
                 }
 
                 // Ensure the variable is not a BuiltIn
-                if spirv.0.annotations.iter().any(|annotation| {
+                if spirv.annotations.iter().any(|annotation| {
                     if !matches!(annotation.class.opcode, Op::Decorate) {
                         return false;
                     }
@@ -83,7 +79,7 @@ impl VertexInputs {
                 }
 
                 // Resolve the variable's location
-                let location = spirv.0.annotations.iter().find_map(|annotation| {
+                let location = spirv.annotations.iter().find_map(|annotation| {
                     if !matches!(annotation.class.opcode, Op::Decorate) {
                         return None;
                     }

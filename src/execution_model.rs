@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use rspirv_reflect::spirv::ExecutionModel;
+use spirv::ExecutionModel;
 
 pub fn execution_model_to_tokens(execution_model: &ExecutionModel) -> TokenStream {
     match execution_model {

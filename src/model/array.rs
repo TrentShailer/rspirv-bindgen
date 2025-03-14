@@ -1,8 +1,5 @@
-use rspirv_reflect::{
-    Reflection,
-    rspirv::dr::{Instruction, Operand},
-    spirv::Op,
-};
+use rspirv::dr::{Instruction, Module, Operand};
+use spirv::Op;
 
 use super::{FromInstruction, ModelType, ToType, Type};
 
@@ -23,7 +20,7 @@ impl Array {
 }
 
 impl FromInstruction for Array {
-    fn from_instruction(instruction: &Instruction, spirv: &Reflection) -> Option<Self> {
+    fn from_instruction(instruction: &Instruction, spirv: &Module) -> Option<Self> {
         if !matches!(instruction.class.opcode, Op::TypeArray) {
             return None;
         }
@@ -32,7 +29,7 @@ impl FromInstruction for Array {
             return None;
         };
 
-        let element_type = spirv.0.types_global_values.iter().find_map(|instruction| {
+        let element_type = spirv.types_global_values.iter().find_map(|instruction| {
             if instruction.result_id.unwrap_or(u32::MAX) == *element_type_id {
                 Type::from_instruction(instruction, spirv)
             } else {

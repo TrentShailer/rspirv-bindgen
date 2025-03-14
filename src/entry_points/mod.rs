@@ -6,11 +6,9 @@ use core::ffi::CStr;
 use convert_case::{Case, Casing};
 use dispatch::Dispatch;
 use quote::{ToTokens, format_ident, quote};
-use rspirv_reflect::{
-    Reflection,
-    rspirv::dr::{Instruction, Operand},
-    spirv::{ExecutionModel, Op},
-};
+use rspirv::dr::{Instruction, Module, Operand};
+use spirv::{ExecutionModel, Op};
+
 use vertex_input::VertexInputs;
 
 use crate::execution_model::{execution_model_to_string, execution_model_to_tokens};
@@ -20,9 +18,8 @@ pub struct EntryPoints {
 }
 
 impl EntryPoints {
-    pub fn new(spirv: &Reflection) -> Self {
+    pub fn new(spirv: &Module) -> Self {
         let entry_points: Vec<_> = spirv
-            .0
             .entry_points
             .iter()
             .filter_map(|instruction| EntryPoint::try_from(instruction, spirv))
@@ -52,7 +49,7 @@ pub struct EntryPoint {
 }
 
 impl EntryPoint {
-    pub fn try_from(instruction: &Instruction, spirv: &Reflection) -> Option<Self> {
+    pub fn try_from(instruction: &Instruction, spirv: &Module) -> Option<Self> {
         // Instruction must be OpEntryPoint
         if !matches!(instruction.class.opcode, Op::EntryPoint) {
             return None;

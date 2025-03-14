@@ -3,11 +3,9 @@ use core::alloc::Layout;
 use convert_case::{Case, Casing};
 use member::Member;
 use quote::{ToTokens, format_ident, quote};
-use rspirv_reflect::{
-    Reflection,
-    rspirv::dr::{Instruction, Operand},
-    spirv::Op,
-};
+
+use rspirv::dr::{Instruction, Module, Operand};
+use spirv::Op;
 
 use crate::debug::find_name_for_id;
 
@@ -78,7 +76,7 @@ impl Structure {
 }
 
 impl FromInstruction for Structure {
-    fn from_instruction(instruction: &Instruction, spirv: &Reflection) -> Option<Self> {
+    fn from_instruction(instruction: &Instruction, spirv: &Module) -> Option<Self> {
         if !matches!(instruction.class.opcode, Op::TypeStruct) {
             return None;
         }

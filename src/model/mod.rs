@@ -2,15 +2,13 @@ use core::alloc::Layout;
 
 pub use array::*;
 pub use matrix::*;
-use proc_macro2::TokenStream;
-use rspirv_reflect::{
-    Reflection,
-    rspirv::dr::{Instruction, Operand},
-    spirv::Op,
-};
 pub use scalar::*;
 pub use structure::*;
 pub use vector::*;
+
+use proc_macro2::TokenStream;
+use rspirv::dr::{Instruction, Module, Operand};
+use spirv::Op;
 
 mod array;
 mod matrix;
@@ -19,7 +17,7 @@ mod structure;
 mod vector;
 
 pub trait FromInstruction {
-    fn from_instruction(instruction: &Instruction, spirv: &Reflection) -> Option<Self>
+    fn from_instruction(instruction: &Instruction, spirv: &Module) -> Option<Self>
     where
         Self: Sized;
 }
@@ -53,7 +51,7 @@ pub enum Type {
 }
 
 impl FromInstruction for Type {
-    fn from_instruction(instruction: &Instruction, spirv: &Reflection) -> Option<Self> {
+    fn from_instruction(instruction: &Instruction, spirv: &Module) -> Option<Self> {
         match instruction.class.opcode {
             Op::TypeInt | Op::TypeFloat => {
                 Scalar::from_instruction(instruction, spirv).map(Self::Scalar)
@@ -69,7 +67,7 @@ impl FromInstruction for Type {
                 let Some(Operand::IdRef(pointer_type_id)) = instruction.operands.get(1) else {
                     return None;
                 };
-                let pointer_type = spirv.0.types_global_values.iter().find(|instruction| {
+                let pointer_type = spirv.types_global_values.iter().find(|instruction| {
                     instruction.result_id.unwrap_or(u32::MAX) == *pointer_type_id
                 })?;
                 Self::from_instruction(pointer_type, spirv)
@@ -77,7 +75,7 @@ impl FromInstruction for Type {
 
             Op::Variable => {
                 let result_type_id = instruction.result_type?;
-                let result_type = spirv.0.types_global_values.iter().find(|instruction| {
+                let result_type = spirv.types_global_values.iter().find(|instruction| {
                     instruction.result_id.unwrap_or(u32::MAX) == result_type_id
                 })?;
                 Self::from_instruction(result_type, spirv)

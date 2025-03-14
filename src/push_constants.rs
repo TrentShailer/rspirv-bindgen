@@ -1,10 +1,7 @@
 use itertools::Itertools;
 use quote::{ToTokens, quote};
-use rspirv_reflect::{
-    Reflection,
-    rspirv::dr::{Instruction, Operand},
-    spirv::{ExecutionModel, Op, StorageClass},
-};
+use rspirv::dr::{Instruction, Module, Operand};
+use spirv::{ExecutionModel, Op, StorageClass};
 
 use crate::{
     execution_model::execution_model_to_tokens,
@@ -17,7 +14,7 @@ pub struct PushConstant {
 }
 
 impl PushConstant {
-    pub fn try_from(instruction: &Instruction, spirv: &Reflection) -> Option<Self> {
+    pub fn try_from(instruction: &Instruction, spirv: &Module) -> Option<Self> {
         if !matches!(instruction.class.opcode, Op::Variable) {
             return None;
         };
@@ -32,14 +29,14 @@ impl PushConstant {
         let variable_id = instruction.result_id?;
 
         // Find the type of the push constant variable:
-        let variable_type =
-            {
-                let variable_type_id = instruction.result_type?;
+        let variable_type = {
+            let variable_type_id = instruction.result_type?;
 
-                spirv.0.types_global_values.iter().find(|instruction| {
-                    instruction.result_id.unwrap_or(u32::MAX) == variable_type_id
-                })?
-            };
+            spirv
+                .types_global_values
+                .iter()
+                .find(|instruction| instruction.result_id.unwrap_or(u32::MAX) == variable_type_id)?
+        };
 
         // Resolve the type
         let Some(Type::Struct(structure)) = Type::from_instruction(variable_type, spirv) else {
@@ -48,7 +45,6 @@ impl PushConstant {
 
         // Resolve the stages
         let stages = spirv
-            .0
             .entry_points
             .iter()
             .filter_map(|instruction| {

@@ -1,10 +1,7 @@
 use convert_case::{Case, Casing};
 use quote::{ToTokens, format_ident, quote};
-use rspirv_reflect::{
-    Reflection,
-    rspirv::dr::Operand,
-    spirv::{Decoration, Op},
-};
+use rspirv::dr::{Module, Operand};
+use spirv::{Decoration, Op};
 
 use crate::{
     debug::find_member_name,
@@ -30,16 +27,15 @@ impl Member {
         }
     }
 
-    pub fn from_id(id: u32, struct_id: u32, location: u32, spirv: &Reflection) -> Option<Self> {
+    pub fn from_id(id: u32, struct_id: u32, location: u32, spirv: &Module) -> Option<Self> {
         let instruction = spirv
-            .0
             .types_global_values
             .iter()
             .find(|instruction| instruction.result_id.unwrap_or(u32::MAX) == id)?;
 
         let member_type = Type::from_instruction(instruction, spirv)?;
 
-        let offset = spirv.0.annotations.iter().find_map(|instruction| {
+        let offset = spirv.annotations.iter().find_map(|instruction| {
             if !matches!(instruction.class.opcode, Op::MemberDecorate) {
                 return None;
             }

@@ -10,12 +10,13 @@ mod model;
 mod push_constants;
 mod specialization_constants;
 
+use descriptors::DescriptorSets;
 use entry_points::EntryPoints;
 use prettyplease::unparse;
 use proc_macro2::TokenStream;
 use push_constants::PushConstant;
 use quote::{ToTokens, quote};
-use rspirv_reflect::Reflection;
+use rspirv::{binary::Parser, dr::Loader};
 use specialization_constants::SpecializationConstants;
 
 /// A parsed Spir-V document to generate bindings from.
@@ -28,27 +29,37 @@ pub struct Spirv {
 
     /// The shader's push constants.
     pub push_constants: Vec<PushConstant>,
+
+    /// The shader's descriptor sets.
+    pub descriptor_sets: Option<DescriptorSets>,
 }
 
 impl Spirv {
     /// Load a Spir-V document from it's bytes.
     pub fn try_from_bytes(bytes: &[u8]) -> Self {
-        let spirv = Reflection::new_from_spirv(bytes).unwrap();
+        let spirv = {
+            let mut loader = Loader::new();
+            let p = Parser::new(bytes, &mut loader);
+            p.parse().unwrap();
+            loader.module()
+        };
 
         let specialization_constants = SpecializationConstants::from_spirv(&spirv);
         let entry_points = EntryPoints::new(&spirv);
 
         let push_constants = spirv
-            .0
             .types_global_values
             .iter()
             .filter_map(|instruction| PushConstant::try_from(instruction, &spirv))
             .collect();
 
+        let descriptor_sets = DescriptorSets::from_spirv(&spirv);
+
         Self {
             specialization_constants,
             entry_points,
             push_constants,
+            descriptor_sets,
         }
     }
 

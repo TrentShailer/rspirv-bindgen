@@ -1,5 +1,6 @@
 use quote::{ToTokens, quote};
-use rspirv_reflect::{Reflection, rspirv::dr::Operand, spirv::ExecutionMode};
+use rspirv::dr::{Module, Operand};
+use spirv::ExecutionMode;
 
 pub struct Dispatch {
     pub x: u32,
@@ -8,8 +9,8 @@ pub struct Dispatch {
 }
 
 impl Dispatch {
-    pub fn for_entrypoint(entry_point_id: u32, spirv: &Reflection) -> Option<Self> {
-        let dispatch_size = spirv.0.execution_modes.iter().find_map(|mode| {
+    pub fn for_entrypoint(entry_point_id: u32, spirv: &Module) -> Option<Self> {
+        let dispatch_size = spirv.execution_modes.iter().find_map(|mode| {
             let Some(Operand::IdRef(id)) = mode.operands.first() else {
                 return None;
             };
