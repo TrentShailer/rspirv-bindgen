@@ -76,6 +76,7 @@ impl ToTokens for Spirv {
         let specialization_constant = &self.specialization_constants;
         let entry_points = &self.entry_points;
         let push_constants = &self.push_constants;
+        let descriptor_sets = &self.descriptor_sets;
 
         // TODO doc comment should include version
         let new_tokens = quote! {
@@ -85,6 +86,7 @@ impl ToTokens for Spirv {
             #specialization_constant
             #entry_points
             #( #push_constants )*
+            #descriptor_sets
         };
 
         tokens.extend(new_tokens);

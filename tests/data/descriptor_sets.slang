@@ -17,6 +17,9 @@ struct Descriptor2
 [vk_binding(1, 0)]
 StructuredBuffer<float> descriptor3;
 
+[vk_binding(0, 3)]
+StructuredBuffer<float> descriptor4;
+
 [shader("vertex")]
 void vertexMain()
 {
@@ -31,5 +34,6 @@ float fragmentMain()
     descriptor1.image.Store( { 0, 0 }, descriptor1.maximum.Load4(0));
     let index = 0;
     let value = descriptor3.Load(index);
-    return value;
+    let value2 = descriptor4.Load(index);
+    return value + value2;
 }
