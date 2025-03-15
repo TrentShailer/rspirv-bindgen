@@ -66,8 +66,6 @@ impl DescriptorSets {
             *descriptors = merged_descriptors
         });
 
-        dbg!(&sets);
-
         Some(Self { sets })
     }
 }
