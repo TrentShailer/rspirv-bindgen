@@ -11,7 +11,7 @@ use spirv::{ExecutionModel, Op};
 
 use vertex_input::VertexInputs;
 
-use crate::execution_model::{execution_model_to_string, execution_model_to_tokens};
+use crate::utilities::{execution_model_to_string, execution_model_to_tokens};
 
 pub struct EntryPoints {
     pub entry_points: Vec<EntryPoint>,

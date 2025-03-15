@@ -4,11 +4,9 @@ use rspirv::dr::{Instruction, Module, Operand};
 use spirv::{Decoration, ExecutionModel, Op};
 
 use crate::{
-    execution_model::execution_model_to_tokens,
-    model::{FromInstruction, ToType},
+    types::{DescriptorType, FromInstruction, TypeSyntax},
+    utilities::execution_model_to_tokens,
 };
-
-use super::descriptor_types::DescriptorType;
 
 #[derive(Debug)]
 pub struct DescriptorBinding {

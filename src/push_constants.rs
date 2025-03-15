@@ -4,8 +4,8 @@ use rspirv::dr::{Instruction, Module, Operand};
 use spirv::{ExecutionModel, Op, StorageClass};
 
 use crate::{
-    execution_model::execution_model_to_tokens,
-    model::{FromInstruction, Structure, Type},
+    types::{FromInstruction, Structure, Type},
+    utilities::execution_model_to_tokens,
 };
 
 pub struct PushConstant {
@@ -14,6 +14,7 @@ pub struct PushConstant {
 }
 
 impl PushConstant {
+    // TODO rename
     pub fn try_from(instruction: &Instruction, spirv: &Module) -> Option<Self> {
         if !matches!(instruction.class.opcode, Op::Variable) {
             return None;

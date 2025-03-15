@@ -10,14 +10,15 @@ use crate::{
     utilities::find_name_for_id,
 };
 
+use super::FromSpirv;
+
 #[derive(Debug)]
 pub struct SpecializationConstants {
     pub structure: Structure,
 }
 
-impl SpecializationConstants {
-    // TODO traitifiy?
-    pub fn from_spirv(spirv: &Module) -> Option<Self> {
+impl FromSpirv for SpecializationConstants {
+    fn from_spirv(spirv: &Module) -> Option<Self> {
         let constants: Vec<_> = spirv
             .types_global_values
             .iter()

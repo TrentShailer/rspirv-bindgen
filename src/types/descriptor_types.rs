@@ -1,7 +1,7 @@
 use rspirv::dr::{Instruction, Module, Operand};
 use spirv::{Decoration, Dim, Op, StorageClass};
 
-use crate::model::{FromInstruction, ToType};
+use super::{FromInstruction, TypeSyntax};
 
 // From Table 3 https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-resources-descset
 #[derive(Debug, Clone, Copy)]
@@ -125,7 +125,7 @@ impl FromInstruction for DescriptorType {
     }
 }
 
-impl ToType for DescriptorType {
+impl TypeSyntax for DescriptorType {
     fn to_type_syntax(&self) -> syn::Type {
         match self {
             Self::Sampler => syn::parse_quote!(ash::vk::DescriptorType::SAMPLER), // TODO may be VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER

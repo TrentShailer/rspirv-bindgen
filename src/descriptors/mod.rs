@@ -5,10 +5,9 @@ use itertools::Itertools;
 use quote::{ToTokens, quote};
 use rspirv::dr::Module;
 
-use crate::model::FromInstruction;
+use crate::types::FromInstruction;
 
 mod descriptor_binding;
-mod descriptor_types;
 
 #[derive(Debug)]
 pub struct DescriptorSets {

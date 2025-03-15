@@ -7,9 +7,9 @@ use quote::{ToTokens, format_ident, quote};
 use rspirv::dr::{Instruction, Module, Operand};
 use spirv::Op;
 
-use crate::debug::find_name_for_id;
+use crate::utilities::find_name_for_id;
 
-use super::{FromInstruction, ModelType, ToType, Type};
+use super::{FromInstruction, SizedType, Type, TypeSyntax};
 
 mod member;
 
@@ -148,13 +148,20 @@ impl FromInstruction for Structure {
     }
 }
 
-impl ModelType for Structure {
+impl SizedType for Structure {
     fn size(&self) -> usize {
         self.layout.size()
     }
 
     fn alignment(&self) -> usize {
         self.layout.align()
+    }
+}
+
+impl TypeSyntax for Structure {
+    fn to_type_syntax(&self) -> syn::Type {
+        let name = self.name_ident();
+        syn::parse_quote! {#name}
     }
 }
 
@@ -172,12 +179,5 @@ impl ToTokens for Structure {
         };
 
         tokens.extend(new_tokens);
-    }
-}
-
-impl ToType for Structure {
-    fn to_type_syntax(&self) -> syn::Type {
-        let name = self.name_ident();
-        syn::parse_quote! {#name}
     }
 }

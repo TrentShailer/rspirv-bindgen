@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use rspirv::dr::{Instruction, Module, Operand};
 use spirv::Op;
 
-use super::{FromInstruction, ModelType, ToType, VulkanFormat};
+use super::{FromInstruction, SizedType, TypeSyntax, VulkanFormatTokens};
 
 /// A parsed `OpTypeInt` or `OpTypeFloat`.
 #[derive(Debug, Clone)]
@@ -71,7 +71,7 @@ impl FromInstruction for Scalar {
     }
 }
 
-impl ModelType for Scalar {
+impl SizedType for Scalar {
     fn size(&self) -> usize {
         match self {
             Self::U8 => 1,
@@ -103,7 +103,7 @@ impl ModelType for Scalar {
     }
 }
 
-impl VulkanFormat for Scalar {
+impl VulkanFormatTokens for Scalar {
     fn to_format_tokens(&self) -> TokenStream {
         match self {
             Self::U8 => syn::parse_quote! {ash::vk::Format::R8_UINT},
@@ -119,7 +119,8 @@ impl VulkanFormat for Scalar {
         }
     }
 }
-impl ToType for Scalar {
+
+impl TypeSyntax for Scalar {
     fn to_type_syntax(&self) -> syn::Type {
         match self {
             Self::U8 => syn::parse_quote! {u8},

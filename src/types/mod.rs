@@ -1,20 +1,34 @@
 use core::alloc::Layout;
 
 pub use array::*;
-pub use matrix::*;
+pub use descriptor_types::*;
 pub use scalar::*;
+use spirv::Op;
 pub use structure::*;
 pub use vector::*;
 
 use proc_macro2::TokenStream;
 use rspirv::dr::{Instruction, Module, Operand};
-use spirv::Op;
 
 mod array;
-mod matrix;
+mod descriptor_types;
 mod scalar;
 mod structure;
 mod vector;
+
+pub trait TypeSyntax {
+    fn to_type_syntax(&self) -> syn::Type;
+}
+
+pub trait SizedType {
+    fn size(&self) -> usize;
+
+    fn alignment(&self) -> usize;
+}
+
+pub trait VulkanFormatTokens {
+    fn to_format_tokens(&self) -> TokenStream;
+}
 
 pub trait FromInstruction {
     fn from_instruction(instruction: &Instruction, spirv: &Module) -> Option<Self>
@@ -22,32 +36,19 @@ pub trait FromInstruction {
         Self: Sized;
 }
 
-pub trait ToType {
-    fn to_type_syntax(&self) -> syn::Type;
-}
-
-pub trait ModelType {
-    fn size(&self) -> usize;
-
-    fn alignment(&self) -> usize;
-
-    fn layout(&self) -> Layout {
-        Layout::from_size_align(self.size(), self.alignment()).unwrap()
-    }
-}
-
-pub trait VulkanFormat {
-    fn to_format_tokens(&self) -> TokenStream;
-}
-
 /// A parsed `OpType*`.
 #[derive(Debug, Clone)]
 pub enum Type {
-    // Void,
     Scalar(Scalar),
     Array(Array),
     Vector(Vector),
     Struct(Structure),
+}
+
+impl Type {
+    pub fn layout(&self) -> Layout {
+        Layout::from_size_align(self.size(), self.alignment()).unwrap()
+    }
 }
 
 impl FromInstruction for Type {
@@ -86,7 +87,7 @@ impl FromInstruction for Type {
     }
 }
 
-impl ModelType for Type {
+impl SizedType for Type {
     fn size(&self) -> usize {
         match self {
             Self::Scalar(scalar) => scalar.size(),
@@ -106,7 +107,7 @@ impl ModelType for Type {
     }
 }
 
-impl ToType for Type {
+impl TypeSyntax for Type {
     fn to_type_syntax(&self) -> syn::Type {
         match self {
             Self::Scalar(scalar) => scalar.to_type_syntax(),

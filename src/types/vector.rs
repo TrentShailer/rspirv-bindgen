@@ -3,7 +3,7 @@ use quote::{format_ident, quote};
 use rspirv::dr::{Instruction, Module, Operand};
 use spirv::Op;
 
-use super::{FromInstruction, ModelType, Scalar, ToType, VulkanFormat};
+use super::{FromInstruction, Scalar, SizedType, TypeSyntax, VulkanFormatTokens};
 
 /// A parsed `OpTypeVector`.
 #[derive(Debug, Clone)]
@@ -41,7 +41,7 @@ impl FromInstruction for Vector {
     }
 }
 
-impl ModelType for Vector {
+impl SizedType for Vector {
     fn size(&self) -> usize {
         let component_size = self.component_type.size();
 
@@ -53,7 +53,7 @@ impl ModelType for Vector {
     }
 }
 
-impl VulkanFormat for Vector {
+impl VulkanFormatTokens for Vector {
     fn to_format_tokens(&self) -> TokenStream {
         let bit_count = self.component_type.size() * 8;
         let components = match self.component_count {
@@ -78,7 +78,7 @@ impl VulkanFormat for Vector {
     }
 }
 
-impl ToType for Vector {
+impl TypeSyntax for Vector {
     fn to_type_syntax(&self) -> syn::Type {
         let component_type = self.component_type.to_type_syntax();
         let count = self.component_count as usize;

@@ -5,8 +5,8 @@ use rspirv::dr::{Instruction, Module, Operand};
 use spirv::{Decoration, ExecutionModel, Op, StorageClass};
 
 use crate::{
-    debug::find_name_for_id,
-    model::{FromInstruction, Structure, Type, VulkanFormat},
+    types::{FromInstruction, Structure, Type, VulkanFormatTokens},
+    utilities::find_name_for_id,
 };
 
 #[derive(Debug)]

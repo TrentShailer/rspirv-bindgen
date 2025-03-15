@@ -2,13 +2,13 @@
 //! Library to generate Rust bindings for Spir-V shaders.
 //!
 
-mod debug;
+mod components;
 mod descriptors;
 mod entry_points;
-mod execution_model;
-mod model;
 mod push_constants;
 mod specialization_constants;
+mod types;
+mod utilities;
 
 use descriptors::DescriptorSets;
 use entry_points::EntryPoints;

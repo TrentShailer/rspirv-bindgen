@@ -4,8 +4,8 @@ use rspirv::dr::{Module, Operand};
 use spirv::{Decoration, Op};
 
 use crate::{
-    debug::find_member_name,
-    model::{Array, FromInstruction, Scalar, ToType, Type},
+    types::{Array, FromInstruction, Scalar, Type, TypeSyntax},
+    utilities::find_member_name,
 };
 
 /// A parsed `OpTypeStruct` member.
@@ -69,7 +69,6 @@ impl Member {
         })?;
 
         let name = find_member_name(struct_id, location, spirv)
-            .cloned()
             .unwrap_or_else(|| format!("field_{}", location));
 
         Some(Self {
