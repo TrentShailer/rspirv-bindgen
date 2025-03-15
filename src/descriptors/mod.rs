@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use descriptor_types::DescriptorType;
 use itertools::Itertools;
 use rspirv::dr::{Instruction, Module, Operand};
@@ -9,27 +11,63 @@ mod descriptor_types;
 
 #[derive(Debug)]
 pub struct DescriptorSets {
-    pub bindings: Vec<DescriptorBinding>, // TODO
+    pub sets: HashMap<u32, Vec<DescriptorBinding>>,
 }
 
 impl DescriptorSets {
     pub fn from_spirv(spirv: &Module) -> Option<Self> {
-        let bindings: Vec<_> = spirv
+        let mut sets = spirv
             .annotations
             .iter()
             .filter_map(|annotation| DescriptorBinding::from_instruction(annotation, spirv))
             .sorted_by_key(|binding| binding.set)
-            .collect();
+            .into_group_map_by(|binding| binding.set);
 
-        if bindings.is_empty() {
+        if sets.is_empty() {
             return None;
         }
 
-        // TODO need to merge ones with matching set and binding...
+        // Merge descriptors with the same set and binding.
+        sets.iter_mut().for_each(|(set, descriptors)| {
+            let mut merged_descriptors: Vec<DescriptorBinding> = Vec::new();
 
-        dbg!(&bindings);
+            for descriptor in descriptors.iter() {
+                if merged_descriptors
+                    .iter()
+                    .any(|other| other.binding == descriptor.binding)
+                {
+                    continue;
+                }
 
-        Some(Self { bindings })
+                let stages: Vec<_> = descriptors
+                    .iter()
+                    .filter_map(|other| {
+                        if other.binding == descriptor.binding {
+                            Some(other.stages.clone())
+                        } else {
+                            None
+                        }
+                    })
+                    .flatten()
+                    .unique()
+                    .collect();
+
+                let descriptor = DescriptorBinding {
+                    set: *set,
+                    binding: descriptor.binding,
+                    binding_type: descriptor.binding_type,
+                    stages,
+                };
+
+                merged_descriptors.push(descriptor);
+            }
+
+            *descriptors = merged_descriptors
+        });
+
+        dbg!(&sets);
+
+        Some(Self { sets })
     }
 }
 

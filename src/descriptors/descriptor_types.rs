@@ -4,7 +4,7 @@ use spirv::{Decoration, Dim, Op, StorageClass};
 use crate::model::{FromInstruction, ToType};
 
 // From Table 3 https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-resources-descset
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum DescriptorType {
     Sampler,
     SampledImage,
