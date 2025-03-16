@@ -8,23 +8,14 @@ license = "MIT OR Apache-2.0"
 authors = ["Trent Shailer"]
 
 [dependencies]
-# Error handling
-thiserror = { version = "2.0", default-features = false }
-
 # SPIR-V reflection
 rspirv = "0.12"
 spirv = "0.3"
 
-# Vulkan structs
-ash = { version = "0.38", default-features = false }
-
-# Derives for raw bytes
-bytemuck = { version = "1.21", default-features = false, features = ["derive"] }
-
 # Converting names to rust casing
 convert_case = "0.8"
 
-# Iterator tools (unique)
+# Iterator tools
 itertools = "0.14"
 
 # Generating source code

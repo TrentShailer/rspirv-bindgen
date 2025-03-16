@@ -1,6 +1,6 @@
 use convert_case::{Case, Casing};
 use quote::{ToTokens, format_ident, quote};
-use rspirv::dr::{Module, Operand};
+use rspirv::dr::Module;
 use spirv::{Decoration, Op};
 
 use crate::{
@@ -14,16 +14,14 @@ pub struct Member {
     pub member_type: Box<Type>,
     pub offset: u32,
     pub name: String,
-    pub location: Option<u32>, // TODO review this
 }
 
 impl Member {
-    pub fn new(member_type: Type, offset: u32, name: String, location: Option<u32>) -> Self {
+    pub fn new(member_type: Type, offset: u32, name: String) -> Self {
         Self {
             member_type: Box::new(member_type),
             offset,
             name,
-            location,
         }
     }
 
@@ -36,36 +34,26 @@ impl Member {
         let member_type = Type::from_instruction(instruction, spirv)?;
 
         let offset = spirv.annotations.iter().find_map(|instruction| {
+            // OpMemberDecorate | Structure Type: <id> | Member: Literal | Decoration | Literal...
+
             if !matches!(instruction.class.opcode, Op::MemberDecorate) {
                 return None;
             }
 
-            let Some(Operand::IdRef(struct_type_id)) = instruction.operands.first() else {
-                return None;
-            };
-            if *struct_type_id != struct_id {
+            if instruction.operands[0].unwrap_id_ref() != struct_id {
                 return None;
             }
 
-            let Some(Operand::LiteralBit32(member)) = instruction.operands.get(1) else {
-                return None;
-            };
-            if *member != location {
+            if instruction.operands[1].unwrap_literal_bit32() != location {
                 return None;
             }
 
-            if !matches!(
-                instruction.operands.get(2),
-                Some(Operand::Decoration(Decoration::Offset))
-            ) {
+            if instruction.operands[2].unwrap_decoration() != Decoration::Offset {
                 return None;
             }
 
-            let Some(Operand::LiteralBit32(offset)) = instruction.operands.get(3) else {
-                return None;
-            };
-
-            Some(*offset)
+            let offset = instruction.operands[3].unwrap_literal_bit32();
+            Some(offset)
         })?;
 
         let name = find_member_name(struct_id, location, spirv)
@@ -75,7 +63,6 @@ impl Member {
             member_type: Box::new(member_type),
             offset,
             name,
-            location: Some(location),
         })
     }
 
@@ -87,7 +74,6 @@ impl Member {
             member_type,
             offset,
             name,
-            location: None,
         }
     }
 }

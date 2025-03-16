@@ -45,29 +45,28 @@ impl ToTokens for SpecializationConstants {
             Structure::from_fields(fields, "SpecializationConstants".to_string())
         };
 
-        let map_entries = {
-            let mut map_entries = Vec::new();
+        let map_entries = self.constants.iter().map(|constant| {
+            let id = constant.id;
+            let size = constant.constant_type.size();
+            let offset = structure
+                .members
+                .iter()
+                .find_map(|member| {
+                    if member.name == constant.name {
+                        Some(member.offset)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or(0);
 
-            for constant in structure.members.iter() {
-                let Some(id) = constant.location else {
-                    continue;
-                };
-
-                let offset: u32 = constant.offset;
-                let size: usize = constant.member_type.size();
-
-                let tokens = quote! {
-                    ash::vk::SpecializationMapEntry::default()
-                        .constant_id(#id)
-                        .offset(#offset)
-                        .size(#size)
-                };
-
-                map_entries.push(tokens);
+            quote! {
+                ash::vk::SpecializationMapEntry::default()
+                    .constant_id(#id)
+                    .offset(#offset)
+                    .size(#size)
             }
-
-            map_entries
-        };
+        });
 
         let impl_tokens = {
             let map_entry_count = map_entries.len();

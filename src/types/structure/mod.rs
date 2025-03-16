@@ -32,7 +32,7 @@ impl Structure {
             let mut padding_count: u32 = 0;
             let mut members = Vec::new();
 
-            for (index, (field, name)) in fields.into_iter().enumerate() {
+            for (field, name) in fields.into_iter() {
                 let (new_layout, offset) = layout.extend(field.layout()).unwrap();
 
                 // Add padding to meet member offset
@@ -45,7 +45,7 @@ impl Structure {
                 }
 
                 // Add the member
-                let member = Member::new(field, offset as u32, name, Some(index as u32));
+                let member = Member::new(field, offset as u32, name);
                 layout = new_layout;
                 members.push(member);
             }
