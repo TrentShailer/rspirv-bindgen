@@ -14,7 +14,7 @@ pub struct Member {
     pub member_type: Box<Type>,
     pub offset: u32,
     pub name: String,
-    pub location: Option<u32>,
+    pub location: Option<u32>, // TODO review this
 }
 
 impl Member {

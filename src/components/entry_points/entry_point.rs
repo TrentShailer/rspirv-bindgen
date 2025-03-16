@@ -1,45 +1,15 @@
-mod dispatch;
-mod vertex_input;
-
 use core::ffi::CStr;
 
 use convert_case::{Case, Casing};
-use dispatch::Dispatch;
 use quote::{ToTokens, format_ident, quote};
-use rspirv::dr::{Instruction, Module, Operand};
 use spirv::{ExecutionModel, Op};
 
-use vertex_input::VertexInputs;
+use crate::{
+    types::FromInstruction,
+    utilities::{execution_model_to_string, execution_model_to_tokens},
+};
 
-use crate::utilities::{execution_model_to_string, execution_model_to_tokens};
-
-pub struct EntryPoints {
-    pub entry_points: Vec<EntryPoint>,
-}
-
-impl EntryPoints {
-    pub fn new(spirv: &Module) -> Self {
-        let entry_points: Vec<_> = spirv
-            .entry_points
-            .iter()
-            .filter_map(|instruction| EntryPoint::try_from(instruction, spirv))
-            .collect();
-
-        Self { entry_points }
-    }
-}
-
-impl ToTokens for EntryPoints {
-    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let entry_points = &self.entry_points;
-
-        let new_tokens = quote! {
-            #( #entry_points )*
-        };
-
-        tokens.extend(new_tokens);
-    }
-}
+use super::{dispatch::Dispatch, vertex_inputs::VertexInputs};
 
 pub struct EntryPoint {
     pub name: String,
@@ -48,32 +18,28 @@ pub struct EntryPoint {
     pub vertex_inputs: Option<VertexInputs>,
 }
 
-impl EntryPoint {
-    pub fn try_from(instruction: &Instruction, spirv: &Module) -> Option<Self> {
-        // Instruction must be OpEntryPoint
+impl FromInstruction for EntryPoint {
+    fn from_instruction(
+        instruction: &rspirv::dr::Instruction,
+        spirv: &rspirv::dr::Module,
+    ) -> Option<Self> {
+        // OpEntryPoint | Execution Model | Entry Point: <id> | Name: Literal | <id>...
+
         if !matches!(instruction.class.opcode, Op::EntryPoint) {
             return None;
         }
 
-        let Some(Operand::ExecutionModel(execution_model)) = instruction.operands.first() else {
-            return None;
-        };
+        let execution_model = instruction.operands[0].unwrap_execution_model();
+        let entry_point_id = instruction.operands[1].unwrap_id_ref();
+        let name = instruction.operands[2].unwrap_literal_string().to_string();
 
-        let Some(Operand::IdRef(entry_point_id)) = instruction.operands.get(1) else {
-            return None;
-        };
+        let dispatch = Dispatch::for_entrypoint(entry_point_id, spirv);
 
-        let Some(Operand::LiteralString(name)) = instruction.operands.get(2) else {
-            return None;
-        };
-
-        let dispatch = Dispatch::for_entrypoint(*entry_point_id, spirv);
-
-        let vertex_inputs = VertexInputs::for_entrypoint(instruction, spirv, None); // TODO
+        let vertex_inputs = VertexInputs::from_instruction(instruction, spirv, None); // TODO
 
         Some(Self {
-            name: name.clone(),
-            execution_model: *execution_model,
+            name,
+            execution_model,
             dispatch,
             vertex_inputs,
         })
@@ -99,8 +65,11 @@ impl ToTokens for EntryPoint {
 
         let name_terminated = format!("{}\0", self.name);
         let name_cstr = CStr::from_bytes_until_nul(name_terminated.as_bytes()).unwrap();
+
         let stage_tokens = execution_model_to_tokens(&self.execution_model);
+
         let dispatch = &self.dispatch;
+
         let vertex_inputs = &self.vertex_inputs;
 
         let new_tokens = quote! {

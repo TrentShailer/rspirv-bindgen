@@ -7,6 +7,8 @@ use rspirv::dr::Module;
 
 use crate::types::FromInstruction;
 
+use super::FromSpirv;
+
 mod descriptor_binding;
 
 #[derive(Debug)]
@@ -14,8 +16,8 @@ pub struct DescriptorSets {
     pub sets: HashMap<u32, Vec<DescriptorBinding>>,
 }
 
-impl DescriptorSets {
-    pub fn from_spirv(spirv: &Module) -> Option<Self> {
+impl FromSpirv for DescriptorSets {
+    fn from_spirv(spirv: &Module) -> Option<Self> {
         let mut sets = spirv
             .annotations
             .iter()
@@ -27,6 +29,7 @@ impl DescriptorSets {
             return None;
         }
 
+        // TODO I don't like this.
         // Merge descriptors with the same set and binding.
         sets.iter_mut().for_each(|(set, descriptors)| {
             let mut merged_descriptors: Vec<DescriptorBinding> = Vec::new();

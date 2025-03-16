@@ -1,6 +1,30 @@
+use itertools::Itertools;
 use proc_macro2::TokenStream;
 use quote::quote;
+use rspirv::dr::Module;
 use spirv::ExecutionModel;
+
+pub fn variable_execution_models(variable_id: u32, spirv: &Module) -> Vec<ExecutionModel> {
+    // OpEntryPoint | Execution Model | Entry Point: <id> | Name: Literal | <id>...
+
+    spirv
+        .entry_points
+        .iter()
+        .filter_map(|instruction| {
+            // If not referenced in this entry point, skip.
+            let referenced = instruction.operands[3..]
+                .iter()
+                .any(|operand| operand.unwrap_id_ref() == variable_id);
+            if !referenced {
+                return None;
+            }
+
+            let execution_model = instruction.operands[0].unwrap_execution_model();
+            Some(execution_model)
+        })
+        .unique()
+        .collect()
+}
 
 pub fn execution_model_to_tokens(execution_model: &ExecutionModel) -> TokenStream {
     match execution_model {

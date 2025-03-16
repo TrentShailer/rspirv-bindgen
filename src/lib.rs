@@ -3,21 +3,14 @@
 //!
 
 mod components;
-mod descriptors;
-mod entry_points;
-mod push_constants;
-mod specialization_constants;
 mod types;
 mod utilities;
 
-use descriptors::DescriptorSets;
-use entry_points::EntryPoints;
+use components::{DescriptorSets, EntryPoints, FromSpirv, PushConstants, SpecializationConstants};
 use prettyplease::unparse;
 use proc_macro2::TokenStream;
-use push_constants::PushConstant;
 use quote::{ToTokens, quote};
 use rspirv::{binary::Parser, dr::Loader};
-use specialization_constants::SpecializationConstants;
 
 /// A parsed Spir-V document to generate bindings from.
 pub struct Spirv {
@@ -25,10 +18,10 @@ pub struct Spirv {
     pub specialization_constants: Option<SpecializationConstants>,
 
     /// The shader's entry points.
-    pub entry_points: EntryPoints,
+    pub entry_points: Option<EntryPoints>,
 
     /// The shader's push constants.
-    pub push_constants: Vec<PushConstant>,
+    pub push_constants: Option<PushConstants>,
 
     /// The shader's descriptor sets.
     pub descriptor_sets: Option<DescriptorSets>,
@@ -45,14 +38,8 @@ impl Spirv {
         };
 
         let specialization_constants = SpecializationConstants::from_spirv(&spirv);
-        let entry_points = EntryPoints::new(&spirv);
-
-        let push_constants = spirv
-            .types_global_values
-            .iter()
-            .filter_map(|instruction| PushConstant::try_from(instruction, &spirv))
-            .collect();
-
+        let entry_points = EntryPoints::from_spirv(&spirv);
+        let push_constants = PushConstants::from_spirv(&spirv);
         let descriptor_sets = DescriptorSets::from_spirv(&spirv);
 
         Self {
@@ -85,7 +72,7 @@ impl ToTokens for Spirv {
 
             #specialization_constant
             #entry_points
-            #( #push_constants )*
+            #push_constants
             #descriptor_sets
         };
 
