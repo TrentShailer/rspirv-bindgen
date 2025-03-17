@@ -1,5 +1,5 @@
 //! # spirv-bindgen
-//! Library to generate Rust bindings for Spir-V shaders.
+//! Library to generate Rust bindings for SPIR-V shaders.
 //!
 
 mod components;
@@ -14,7 +14,7 @@ use rspirv::{
     dr::Loader,
 };
 
-/// A parsed Spir-V document to generate bindings from.
+/// A parsed SPIR-V document to generate bindings from.
 pub struct Spirv {
     /// The shader's specialization constants.
     pub specialization_constants: Option<SpecializationConstants>,
@@ -30,7 +30,7 @@ pub struct Spirv {
 }
 
 impl Spirv {
-    /// Load a Spir-V document from it's bytes.
+    /// Load a SPIR-V document from it's bytes.
     pub fn try_from_bytes(bytes: &[u8]) -> Result<Self, ParseState> {
         let spirv = {
             let mut loader = Loader::new();
