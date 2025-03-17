@@ -82,7 +82,10 @@ impl Cli {
         match &self.output {
             // Output to file(s)
             Some(output) => {
-                if output.try_exists()? {
+                if output
+                    .try_exists()
+                    .context("Could not check if output exists")?
+                {
                     if output.is_dir() {
                         self.write_many_files(modules, output)?;
                     } else if output.is_file() {
@@ -90,12 +93,17 @@ impl Cli {
                     } else {
                         return Err(eyre!("Output must be a regular file or directory."));
                     }
-                } else {
-                    // Create it, however, how to tell if path is a file or directory...
-                    // Trailing / ?
-                    // Based on many input
+                } else if output.to_string_lossy().ends_with('/')
+                    || output.to_string_lossy().ends_with('\\')
+                {
+                    fs::create_dir_all(output).context("Could not create output directory")?;
 
-                    todo!()
+                    self.write_many_files(modules, output)?;
+                } else {
+                    fs::create_dir_all(output.parent().expect("File should have a parent"))
+                        .context("Could not create output file")?;
+
+                    self.write_single_file(modules, output)?;
                 }
             }
 

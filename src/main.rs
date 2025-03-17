@@ -4,7 +4,7 @@
 
 use clap::Parser;
 use cli::Cli;
-use color_eyre::Result;
+use color_eyre::{Result, eyre::Context};
 use tracing::{Level, subscriber::set_global_default};
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::layer::SubscriberExt;
@@ -16,8 +16,9 @@ fn main() -> Result<()> {
     let _loggers = setup_logger(false);
 
     let cli = Cli::parse();
-    let modules = cli.read_source()?;
-    cli.write_output(modules)?;
+    let modules = cli.read_source().context("Could not read source")?;
+    cli.write_output(modules)
+        .context("Could not write output")?;
 
     Ok(())
 }
