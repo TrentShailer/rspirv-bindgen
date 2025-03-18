@@ -109,7 +109,7 @@ impl FromInstruction for DescriptorType {
                     if buffer_block {
                         Some(Self::StorageBuffer)
                     } else {
-                        // TODO May be
+                        // May be
                         //  Uniform Buffer
                         //  Storage Buffer
                         //  Inline Uniform
@@ -128,8 +128,8 @@ impl FromInstruction for DescriptorType {
 impl TypeSyntax for DescriptorType {
     fn to_type_syntax(&self) -> syn::Type {
         match self {
-            Self::Sampler => syn::parse_quote!(ash::vk::DescriptorType::SAMPLER), // TODO may be VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-            Self::SampledImage => syn::parse_quote!(ash::vk::DescriptorType::SAMPLED_IMAGE), // TODO may be VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+            Self::Sampler => syn::parse_quote!(ash::vk::DescriptorType::SAMPLER), // May be VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+            Self::SampledImage => syn::parse_quote!(ash::vk::DescriptorType::SAMPLED_IMAGE), // May be VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
             Self::StorageImage => syn::parse_quote!(ash::vk::DescriptorType::STORAGE_IMAGE),
             Self::CombinedImageSampler => {
                 syn::parse_quote!(ash::vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
@@ -140,15 +140,15 @@ impl TypeSyntax for DescriptorType {
             Self::StorageTexelBuffer => {
                 syn::parse_quote!(ash::vk::DescriptorType::STORAGE_TEXEL_BUFFER)
             }
-            Self::UniformBuffer => syn::parse_quote!(ash::vk::DescriptorType::UNIFORM_BUFFER), // TODO may be VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
-            Self::StorageBuffer => syn::parse_quote!(ash::vk::DescriptorType::STORAGE_BUFFER), // TODO may be VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC
+            Self::UniformBuffer => syn::parse_quote!(ash::vk::DescriptorType::UNIFORM_BUFFER), // May be VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
+            Self::StorageBuffer => syn::parse_quote!(ash::vk::DescriptorType::STORAGE_BUFFER), // May be VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC
             Self::InputAttachment => syn::parse_quote!(ash::vk::DescriptorType::INPUT_ATTACHMENT),
             Self::InlineUniformBlock => {
                 syn::parse_quote!(ash::vk::DescriptorType::INLINE_UNIFORM_BLOCK_EXT)
             }
             Self::AccelerationStructure => {
                 syn::parse_quote!(ash::vk::DescriptorType::ACCELERATION_STRUCTURE_KHR)
-            } // TODO may be VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV
+            } // May be VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV
         }
     }
 }
