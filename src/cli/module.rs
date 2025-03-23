@@ -73,7 +73,14 @@ impl Module {
                 let path_str = path.to_string_lossy().replace("\\", "/");
 
                 quote! {
-                    pub const BYTES: &[u8] = include_bytes!(#path_str);
+                    pub const BYTES: &[u8] = {
+                        #[repr(C, align(4))]
+                        struct Aligned<T: ?Sized>(T);
+
+                        const ALIGNED_DATA: &Aligned<[u8]> = &Aligned(*include_bytes!(#path_str));
+
+                        &ALIGNED_DATA.0
+                    };
                 }
             }
             None => TokenStream::new(),
