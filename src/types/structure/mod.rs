@@ -87,6 +87,8 @@ impl FromInstruction for Structure {
             Some(name) => {
                 if let Some(index) = name.rfind("_std430") {
                     name[0..index].to_owned()
+                } else if let Some(index) = name.rfind("_natural") {
+                    name[0..index].to_owned()
                 } else {
                     name.to_owned()
                 }
