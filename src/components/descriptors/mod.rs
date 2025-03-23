@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use descriptor_binding::DescriptorBinding;
 use itertools::Itertools;
-use quote::{ToTokens, quote};
+use quote::{ToTokens, format_ident, quote};
 use rspirv::dr::Module;
 
 use crate::types::FromInstruction;
@@ -79,30 +79,63 @@ impl ToTokens for DescriptorSets {
         };
         let set_count = *set_count as usize + 1;
 
-        let mut set_tokens = Vec::with_capacity(set_count);
+        let set_idents: Vec<_> = (0..set_count)
+            .map(|set| format_ident!("set_{}", set))
+            .collect();
 
-        for i in 0..set_count {
-            let descriptors = self.sets.get(&(i as u32));
+        let set_tokens = (0..set_count).map(|set| {
+            let ident = &set_idents[set];
 
-            let tokens = match descriptors {
-                Some(descriptors) => quote! {
-                    Box::new(
+            let bindings = match self.sets.get(&(set as u32)) {
+                Some(bindings) => {
+                    quote! {
                         [
-                            #( #descriptors ),*
+                            #( #bindings ),*
                         ]
-                    )
-                },
-                None => quote! {Box::new([])},
+                    }
+                }
+                None => quote! {[]},
             };
 
-            set_tokens.push(tokens);
-        }
+            let cleanup: Vec<_> = (0..set)
+                .map(|set| {
+                    let ident = &set_idents[set];
+
+                    quote! {
+                        unsafe { device.destroy_descriptor_set_layout(#ident, None) }
+                    }
+                })
+                .collect();
+
+            quote! {
+                let #ident = {
+                    let bindings = #bindings;
+
+                    let layout_info = ash::vk::DescriptorSetLayoutCreateInfo::default()
+                        .bindings(&bindings)
+                        .flags(flags);
+
+                    match unsafe { device.create_descriptor_set_layout(&layout_info, None) } {
+                        Ok(set) => set,
+                        Err(error) => {
+                            #( #cleanup );*
+                            return Err(error);
+                        }
+                    }
+                };
+            }
+        });
 
         let new_tokens = quote! {
-            pub fn descriptor_sets<'a>() -> [Box<[ash::vk::DescriptorSetLayoutBinding<'a>]>; #set_count] {
-                [
-                    #( #set_tokens ),*
-                ]
+            pub unsafe fn set_layouts(
+                device: &ash::Device,
+                flags: ash::vk::DescriptorSetLayoutCreateFlags,
+            ) -> Result<Vec<ash::vk::DescriptorSetLayout>, ash::vk::Result> {
+                #( #set_tokens )*
+
+                Ok(vec![
+                    #( #set_idents ),*
+                ])
             }
         };
 
