@@ -7,3 +7,9 @@ Generate Rust bindings for SPIR-V shaders.
 >
 > Maintanance, bug fixes, new features, and support will only be provided when/if I feel like it.
 >
+
+## Installing 
+
+### From disk
+
+> `cargo install --path . --locked`
