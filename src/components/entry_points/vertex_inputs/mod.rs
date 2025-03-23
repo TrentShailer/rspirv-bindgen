@@ -142,6 +142,62 @@ impl ToTokens for VertexInputs {
             }
         };
 
+        let binding_tokens_2_ext = {
+            let vertex_tokens = self
+                .vertex_inputs
+                .as_ref()
+                .map(|group| group.binding_tokens_2_ext());
+            let instance_tokens = self
+                .instance_inputs
+                .as_ref()
+                .map(|group| group.binding_tokens_2_ext());
+
+            let binding_count: usize = if vertex_tokens.is_some() { 1 } else { 0 }
+                + if instance_tokens.is_some() { 1 } else { 0 };
+
+            quote! {
+                pub fn vertex_binding_descriptions_2_ext<'a>() -> [ash::vk::VertexInputBindingDescription2EXT<'a>; #binding_count] {
+                    [
+                        #vertex_tokens
+                        #instance_tokens
+                    ]
+                }
+            }
+        };
+
+        let attribute_tokens_2_ext = {
+            let vertex_tokens = self
+                .vertex_inputs
+                .as_ref()
+                .map(|group| group.attribute_tokens_2_ext());
+            let vertex_attribute_count = self
+                .vertex_inputs
+                .as_ref()
+                .map(|group| group.attribute_count())
+                .unwrap_or(0);
+
+            let instance_tokens = self
+                .instance_inputs
+                .as_ref()
+                .map(|group| group.attribute_tokens_2_ext());
+            let instance_attribute_count = self
+                .instance_inputs
+                .as_ref()
+                .map(|group| group.attribute_count())
+                .unwrap_or(0);
+
+            let attribute_count = vertex_attribute_count + instance_attribute_count;
+
+            quote! {
+                pub fn vertex_attribute_descriptions_2_ext<'a>() -> [ash::vk::VertexInputAttributeDescription2EXT<'a>; #attribute_count] {
+                    [
+                        #vertex_tokens
+                        #instance_tokens
+                    ]
+                }
+            }
+        };
+
         let vertex_structure = self.vertex_inputs.as_ref().map(|group| &group.structure);
         let instance_structure = self.instance_inputs.as_ref().map(|group| &group.structure);
 
@@ -150,6 +206,8 @@ impl ToTokens for VertexInputs {
             #instance_structure
             #binding_tokens
             #attribute_tokens
+            #binding_tokens_2_ext
+            #attribute_tokens_2_ext
         };
 
         tokens.extend(new_tokens);

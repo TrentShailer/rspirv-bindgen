@@ -57,6 +57,62 @@ impl VertexInputGroup {
         self.inputs.len()
     }
 
+    pub fn binding_tokens_2_ext(&self) -> TokenStream {
+        let stride = self.structure.layout.size() as u32;
+        let binding = self.binding;
+        let input_rate = self.input_rate.to_type_syntax();
+
+        quote! {
+            ash::vk::VertexInputBindingDescription2EXT::default()
+                .binding(#binding)
+                .stride(#stride)
+                .input_rate(#input_rate)
+                .divisor(1)
+        }
+    }
+
+    pub fn attribute_tokens_2_ext(&self) -> TokenStream {
+        let attributes: Vec<_> = self
+            .inputs
+            .iter()
+            .map(|input| {
+                let location = input.location;
+
+                let format = match &input.input_type {
+                    Type::Scalar(scalar) => scalar.to_format_tokens(),
+                    Type::Vector(vector) => vector.to_format_tokens(),
+                    Type::Array(_) => return None,
+                    Type::Struct(_) => return None,
+                };
+
+                let binding = self.binding;
+
+                // TODO this relies on struct not doing any name transformations.
+                let offset = self.structure.members.iter().find_map(|member| {
+                    if member.name == input.name {
+                        Some(member.offset)
+                    } else {
+                        None
+                    }
+                })?;
+
+                let tokens = quote! {
+                    ash::vk::VertexInputAttributeDescription2EXT::default()
+                        .location(#location)
+                        .binding(#binding)
+                        .format(#format)
+                        .offset(#offset)
+                };
+
+                Some(tokens)
+            })
+            .collect();
+
+        quote! {
+            #( #attributes ),*
+        }
+    }
+
     pub fn binding_tokens(&self) -> TokenStream {
         let size = self.structure.layout.size() as u32;
         let binding = self.binding;
