@@ -21,6 +21,7 @@ pub struct Cli {
     /// The path to a SPIR-V file or directory containing SPIR-V files.
     source: PathBuf,
 
+    // TODO specify instance index
     /// The output file or directory to write the bindings to.
     #[arg(short, long)]
     output: Option<PathBuf>,
@@ -117,7 +118,7 @@ impl Cli {
     fn write_std(&self, modules: Vec<Module>) -> color_eyre::Result<()> {
         let modules: Vec<_> = modules
             .iter()
-            .map(|module| module.to_wrapped_tokens())
+            .map(|module| module.to_wrapped_tokens(None))
             .collect();
 
         let tokens = quote! {
@@ -139,7 +140,7 @@ impl Cli {
         let mut fmt_processes = Vec::new();
 
         for module in modules {
-            let tokens = module.to_tokens();
+            let tokens = module.to_tokens(Some(directory));
 
             let output_path = directory.join(format!("{}.rs", module.name));
             let file = File::options()
@@ -185,11 +186,14 @@ impl Cli {
     fn write_single_file(&self, modules: Vec<Module>, file: &Path) -> color_eyre::Result<()> {
         // Wrap the modules if there will be multiple modules in the file.
         let module_tokens: Vec<_> = if modules.len() == 1 {
-            modules.iter().map(|module| module.to_tokens()).collect()
+            modules
+                .iter()
+                .map(|module| module.to_tokens(file.parent()))
+                .collect()
         } else {
             modules
                 .iter()
-                .map(|module| module.to_wrapped_tokens())
+                .map(|module| module.to_wrapped_tokens(file.parent()))
                 .collect()
         };
 

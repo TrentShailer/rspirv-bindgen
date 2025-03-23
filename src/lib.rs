@@ -15,7 +15,7 @@ use rspirv::{
 };
 
 /// A parsed SPIR-V document to generate bindings from.
-pub struct Spirv {
+pub struct Shader {
     /// The shader's specialization constants.
     pub specialization_constants: Option<SpecializationConstants>,
 
@@ -29,7 +29,7 @@ pub struct Spirv {
     pub descriptor_sets: Option<DescriptorSets>,
 }
 
-impl Spirv {
+impl Shader {
     /// Load a SPIR-V document from it's bytes.
     pub fn try_from_bytes(bytes: &[u8]) -> Result<Self, ParseState> {
         let spirv = {
@@ -53,7 +53,7 @@ impl Spirv {
     }
 }
 
-impl ToTokens for Spirv {
+impl ToTokens for Shader {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let specialization_constant = &self.specialization_constants;
         let entry_points = &self.entry_points;

@@ -1,16 +1,19 @@
 use core::cell::LazyCell;
-use std::{fs, io, path::PathBuf};
+use std::{
+    fs, io,
+    path::{Path, PathBuf},
+};
 
 use convert_case::{Case, Casing};
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use regex::Regex;
 use rspirv::binary::ParseState;
-use rspirv_bindgen::Spirv;
+use rspirv_bindgen::Shader;
 use thiserror::Error;
 
 pub struct Module {
-    pub spirv: Spirv,
+    pub spirv: Shader,
     pub source: PathBuf,
     pub name: String,
 }
@@ -19,7 +22,7 @@ impl Module {
     pub fn new(source: PathBuf) -> Result<Self, ModuleError> {
         let source_bytes = fs::read(&source)?;
 
-        let spirv = Spirv::try_from_bytes(&source_bytes)?;
+        let spirv = Shader::try_from_bytes(&source_bytes)?;
 
         let name = {
             let name = source
@@ -42,8 +45,11 @@ impl Module {
         })
     }
 
-    pub fn to_wrapped_tokens(&self) -> TokenStream {
-        let tokens = self.spirv.to_token_stream();
+    pub fn to_wrapped_tokens(&self, output_path: Option<&Path>) -> TokenStream {
+        let byte_tokens = self.bytes_tokens(output_path);
+        let mut tokens = self.spirv.to_token_stream();
+        tokens.extend(byte_tokens);
+
         let name = format_ident!("{}", self.name);
 
         quote! {
@@ -53,8 +59,25 @@ impl Module {
         }
     }
 
-    pub fn to_tokens(&self) -> TokenStream {
-        self.spirv.to_token_stream()
+    pub fn to_tokens(&self, output_path: Option<&Path>) -> TokenStream {
+        let byte_tokens = self.bytes_tokens(output_path);
+        let mut tokens = self.spirv.to_token_stream();
+        tokens.extend(byte_tokens);
+        tokens
+    }
+
+    fn bytes_tokens(&self, output_path: Option<&Path>) -> TokenStream {
+        match output_path.as_ref() {
+            Some(output_path) => {
+                let path = pathdiff::diff_paths(&self.source, output_path).unwrap();
+                let path_str = path.to_string_lossy().replace("\\", "/");
+
+                quote! {
+                    pub const BYTES: &[u8] = include_bytes!(#path_str);
+                }
+            }
+            None => TokenStream::new(),
+        }
     }
 }
 
